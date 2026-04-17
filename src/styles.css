@@ -781,3 +781,24 @@ button.danger {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.canvas-toolbar {
+  position: relative;
+  z-index: 40;
+}
+
+.toolbar-actions {
+  position: relative;
+  z-index: 41;
+}
+
+.toolbar-actions button {
+  position: relative;
+  z-index: 42;
+  pointer-events: auto;
+}
+
+.canvas-stage-wrap {
+  position: relative;
+  z-index: 1;
+}

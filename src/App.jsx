@@ -1586,11 +1586,37 @@ export default function App() {
   ]);
 
   const clearSavedDraft = () => {
+    const ok = window.confirm("要清除目前草稿與畫布內容嗎？");
+    if (!ok) return;
+
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch (err) {
       console.error("Failed to clear draft:", err);
     }
+
+    historyLockRef.current = true;
+
+    setSlides(3);
+    setRatioKey("4:5");
+    setBackgroundMode("solid");
+    setBgPrimary("#ffffff");
+    setBgSecondary("#f3f4f6");
+    setImages([]);
+    setElements([]);
+    setTemplateSlots([]);
+    setTemplateId("blank");
+    setSelectedId(null);
+    setSelectedSlotId(null);
+    setHistoryPast([]);
+    setHistoryFuture([]);
+    setUserZoom(1);
+    setPan({ x: 0, y: 0 });
+    setPreviews([]);
+
+    setTimeout(() => {
+      historyLockRef.current = false;
+    }, 0);
   };
 
   const undo = () => {
@@ -2760,8 +2786,9 @@ export default function App() {
                 <>
                   <button className="ghost" onClick={undo}>上一步</button>
                   <button className="ghost" onClick={redo}>下一步</button>
-                  <button className="ghost danger" onClick={removeSelected}>刪除選取</button>
-                  <button onClick={refreshPreviews}>更新預覽</button>
+                  <button type="button" className="ghost danger" onClick={removeSelected}>刪除選取</button>
+                  <button type="button" className="ghost" onClick={clearSavedDraft}>清除草稿</button>
+                  <button type="button" onClick={refreshPreviews}>更新預覽</button>
                 </>
               )}
 
@@ -2769,8 +2796,8 @@ export default function App() {
                 <>
                   <button className="ghost" onClick={undo}>上一步</button>
                   <button className="ghost" onClick={redo}>下一步</button>
-                  <button className="ghost danger" onClick={removeSelected}>刪除</button>
-                  <button className="ghost" onClick={clearSavedDraft}>清稿</button>
+                  <button type="button" className="ghost danger" onClick={removeSelected}>刪除</button>
+                  <button type="button" className="ghost" onClick={clearSavedDraft}>清稿</button>
                   <button onClick={() => {
                     setMobileTab("preview");
                     setMobileDrawerOpen(true);
