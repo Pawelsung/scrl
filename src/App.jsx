@@ -254,6 +254,23 @@ function getShortestAngleDelta(current, start) {
   return delta;
 }
 
+function snapRotationAngle(angle, snaps = ROTATION_SNAPS, tolerance = 12) {
+  const normalized = normalizeRotation(angle);
+  let best = normalized;
+  let bestDiff = Infinity;
+
+  for (const snap of snaps) {
+    let diff = Math.abs(normalized - snap);
+    if (diff > 180) diff = 360 - diff;
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = snap;
+    }
+  }
+
+  return bestDiff <= tolerance ? best : normalized;
+}
+
 function createSlot({
   x,
   y,
@@ -1979,6 +1996,25 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const preventSafariGesture = (e) => {
+      e.preventDefault();
+    };
+
+    el.addEventListener("gesturestart", preventSafariGesture);
+    el.addEventListener("gesturechange", preventSafariGesture);
+    el.addEventListener("gestureend", preventSafariGesture);
+
+    return () => {
+      el.removeEventListener("gesturestart", preventSafariGesture);
+      el.removeEventListener("gesturechange", preventSafariGesture);
+      el.removeEventListener("gestureend", preventSafariGesture);
+    };
+  }, []);
+
+  useEffect(() => {
     const syncModifiers = (e) => {
       setModifiers({
         shift: !!e.shiftKey,
@@ -2822,6 +2858,7 @@ export default function App() {
 
   const handleViewportTouchStart = (e) => {
     if (e.touches.length === 2) {
+      e.preventDefault();
       const distance = getDistance(e.touches);
       const midpoint = getMidpoint(e.touches);
       const angle = getAngle(e.touches);
@@ -2923,6 +2960,20 @@ export default function App() {
   };
 
   const handleViewportTouchEnd = () => {
+    if (gestureRef.current.pinchMode === "object") {
+      if (selectedSlot) {
+        updateSlot({
+          ...selectedSlot,
+          rotation: snapRotationAngle(selectedSlot.rotation || 0),
+        });
+      } else if (selectedItem && (selectedItem.type === "image" || selectedItem.type === "sticker")) {
+        updateElement({
+          ...selectedItem,
+          rotation: snapRotationAngle(selectedItem.rotation || 0),
+        });
+      }
+    }
+
     gestureRef.current.isPanning = false;
     gestureRef.current.pinchMode = "viewport";
     gestureRef.current.pinchStartObject = null;
@@ -3058,7 +3109,19 @@ export default function App() {
                 </>
               )}
 
-
+              {isMobile && (
+                <>
+                  <button className="ghost" onClick={undo}>上一步</button>
+                  <button className="ghost" onClick={redo}>下一步</button>
+                  <button className="ghost danger" onClick={removeSelected}>刪除</button>
+                  <button onClick={() => {
+                    setMobileTab("preview");
+                    setMobileDrawerOpen(true);
+                  }}>
+                    預覽
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -3069,10 +3132,10 @@ export default function App() {
             onPointerMove={handleViewportPointerMove}
             onPointerUp={handleViewportPointerUp}
             onPointerCancel={handleViewportPointerUp}
-            onTouchStart={handleViewportTouchStart}
-            onTouchMove={handleViewportTouchMove}
-            onTouchEnd={handleViewportTouchEnd}
-            onTouchCancel={handleViewportTouchEnd}
+            onTouchStartCapture={handleViewportTouchStart}
+            onTouchMoveCapture={handleViewportTouchMove}
+            onTouchEndCapture={handleViewportTouchEnd}
+            onTouchCancelCapture={handleViewportTouchEnd}
             onDoubleClick={resetView}
           >
             {(selectedItem || selectedSlot) && (
