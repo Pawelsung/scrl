@@ -10,6 +10,11 @@ import {
   Transformer,
 } from "react-konva";
 
+import ProjectPanelUI from "./components/panels/ProjectPanel";
+import PreviewPanelUI from "./components/panels/PreviewPanel";
+import MobileBottomBarUI from "./components/mobile/MobileBottomBar";
+import MobileDrawerUI from "./components/mobile/MobileDrawer";
+
 const RATIOS = {
   "4:5": { w: 1080, h: 1350 },
   "1:1": { w: 1080, h: 1080 },
@@ -1815,14 +1820,7 @@ function MobileDrawer({
             </div>
           )}
 
-          {panel === "preview" && (
-            <PreviewPanel
-              previews={previews}
-              downloadDataUrl={downloadDataUrl}
-              downloadAll={downloadAll}
-              shareDataUrlToIOS={shareDataUrlToIOS}
-            />
-          )}
+
         </div>
       </div>
     </>
@@ -1858,8 +1856,8 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth <= 768 : false
   );
-  const [mobilePanel, setMobilePanel] = useState("assets");
-  const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState("project");
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const containerRef = useRef(null);
   const stageRef = useRef(null);
@@ -1979,12 +1977,6 @@ export default function App() {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
-
-  useEffect(() => {
-    if (!isMobile && mobilePanelOpen) {
-      setMobilePanelOpen(false);
-    }
-  }, [isMobile, mobilePanelOpen]);
 
   useEffect(() => {
     const syncModifiers = (e) => {
@@ -2942,31 +2934,107 @@ export default function App() {
     return 24;
   }, []);
 
-  const openMobilePanel = (panel) => {
-    setMobilePanel(panel);
-    setMobilePanelOpen(true);
+  const projectPanelProject = {
+    count: slides,
+    ratio: ratioKey,
+    backgroundMode,
+    backgroundColor: bgPrimary,
+    backgroundColor2: bgSecondary,
   };
 
-  const closeMobilePanel = () => {
-    setMobilePanelOpen(false);
+  const setProjectPanelProject = (updater) => {
+    const prev = {
+      count: slides,
+      ratio: ratioKey,
+      backgroundMode,
+      backgroundColor: bgPrimary,
+      backgroundColor2: bgSecondary,
+    };
+
+    const next = typeof updater === "function" ? updater(prev) : updater;
+
+    if (next.count !== undefined) setSlides(next.count);
+    if (next.ratio !== undefined) setRatioKey(next.ratio);
+    if (next.backgroundMode !== undefined) setBackgroundMode(next.backgroundMode);
+    if (next.backgroundColor !== undefined) setBgPrimary(next.backgroundColor);
+    if (next.backgroundColor2 !== undefined) setBgSecondary(next.backgroundColor2);
+  };
+
+  const projectPanelTemplates = TEMPLATES.map((t) => ({
+    id: t.id,
+    name: t.name,
+    description: "",
+  }));
+
+  const projectPanelStickers = STICKERS.map((st) => ({
+    id: st.id,
+    name: st.label,
+    src:
+      "data:image/svg+xml;utf8," +
+      encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+          <rect width="200" height="200" rx="28" fill="#111827"/>
+          <text x="100" y="108" text-anchor="middle" font-size="28" fill="white" font-family="Arial">${st.label}</text>
+        </svg>`
+      ),
+    stickerType: st.type,
+  }));
+
+  const handleUploadImages = () => fileRef.current?.click();
+  const handleAddText = () => addText();
+  const handleExportJson = () => exportProject();
+  const handleImportJson = () => importRef.current?.click();
+  const handleTemplateSelect = (id) => applyTemplate(id);
+  const handleAddAssetToCanvas = (asset) => addImageToCanvas(asset);
+  const handleAddStickerToCanvas = (sticker) => addSticker(sticker.stickerType || sticker.type);
+
+  const projectPanelProps = {
+    project: projectPanelProject,
+    setProject: setProjectPanelProject,
+    onUploadImages: handleUploadImages,
+    onAddText: handleAddText,
+    onExportJson: handleExportJson,
+    onImportJson: handleImportJson,
+    assets: images,
+    stickers: projectPanelStickers,
+    templates: projectPanelTemplates,
+    activeTemplateId: templateId,
+    onTemplateSelect: handleTemplateSelect,
+    onAddAssetToCanvas: handleAddAssetToCanvas,
+    onAddStickerToCanvas: handleAddStickerToCanvas,
+  };
+
+  const previewPanelProps = {
+    previews: previews.map((src, idx) => ({
+      id: `preview-${idx + 1}`,
+      src,
+    })),
+    onDownloadOne: (preview, index) =>
+      downloadDataUrl(preview.src, `carousel_${String(index + 1).padStart(2, "0")}.png`),
+    onDownloadAll: downloadAll,
+    isBusy: isExporting,
+  };
+
+  const mobileDrawerProps = {
+    open: mobileDrawerOpen,
+    activeTab: mobileTab,
+    onClose: () => setMobileDrawerOpen(false),
+    projectPanelProps,
+    previewPanelProps,
+    assets: images,
+    stickers: projectPanelStickers,
+    templates: projectPanelTemplates,
+    activeTemplateId: templateId,
+    onTemplateSelect: handleTemplateSelect,
+    onAddAssetToCanvas: handleAddAssetToCanvas,
+    onAddStickerToCanvas: handleAddStickerToCanvas,
   };
 
   return (
     <div className="app-shell">
       {!isMobile && (
         <aside className="sidebar left">
-          <DesktopProjectPanel
-            slides={slides}
-            setSlides={setSlides}
-            ratioKey={ratioKey}
-            setRatioKey={setRatioKey}
-            fileRef={fileRef}
-            addText={addText}
-            exportProject={exportProject}
-            importRef={importRef}
-          />
-          <DesktopAssetsPanel images={images} addImageToCanvas={addImageToCanvas} />
-          <DesktopStickerPanel addSticker={addSticker} />
+          <ProjectPanelUI {...projectPanelProps} />
         </aside>
       )}
 
@@ -2990,14 +3058,7 @@ export default function App() {
                 </>
               )}
 
-              {isMobile && (
-                <>
-                  <button className="ghost" onClick={undo}>上一步</button>
-                  <button className="ghost" onClick={redo}>下一步</button>
-                  <button className="ghost danger" onClick={removeSelected}>刪除</button>
-                  <button onClick={() => openMobilePanel("preview")}>預覽</button>
-                </>
-              )}
+
             </div>
           </div>
 
@@ -3200,84 +3261,29 @@ export default function App() {
             </div>
           </div>
 
-          {isMobile && (
-            <MobileQuickBar
-              selectedItem={selectedItem}
-              selectedSlot={selectedSlot}
-              onDuplicate={duplicateSelected}
-              onBringForward={bringForward}
-              onSendBackward={sendBackward}
-              onDelete={removeSelected}
-              onOpenAssets={() => openMobilePanel("assets")}
-              onOpenInspector={() => openMobilePanel("inspector")}
-              onSlotNudge={nudgeSelectedSlot}
-              onSlotZoom={zoomSelectedSlot}
-              onSlotClear={() => {
-                pushHistory();
-                clearSelectedSlotImage();
-              }}
-            />
-          )}
 
-          <div className="mobile-bottom-bar">
-            <button onClick={zoomOut}>－</button>
-            <button onClick={zoomIn}>＋</button>
-            <button onClick={fitToScreen}>Fit</button>
-            <button onClick={zoom100}>100%</button>
-            <div className="mobile-zoom-readout">{Math.round(displayScale * 100)}%</div>
-          </div>
 
-          {isMobile && (
-            <div className="mobile-tabbar">
-              <button
-                className={mobilePanel === "assets" ? "active" : ""}
-                onClick={() => openMobilePanel("assets")}
-              >
-                素材
-              </button>
-              <button
-                className={mobilePanel === "style" ? "active" : ""}
-                onClick={() => openMobilePanel("style")}
-              >
-                樣式
-              </button>
-              <button
-                className={mobilePanel === "inspector" ? "active" : ""}
-                onClick={() => openMobilePanel("inspector")}
-              >
-                物件
-              </button>
-              <button
-                className={mobilePanel === "preview" ? "active" : ""}
-                onClick={() => openMobilePanel("preview")}
-              >
-                預覽
-              </button>
-            </div>
-          )}
+
+
+
         </div>
+        {!isMobile && <PreviewPanelUI {...previewPanelProps} />}
 
-        {!isMobile && (
-          <PreviewPanel
-            previews={previews}
-            downloadDataUrl={downloadDataUrl}
-            downloadAll={downloadAll}
-            shareDataUrlToIOS={shareDataUrlToIOS}
+        {isMobile && (
+          <MobileBottomBarUI
+            activeTab={mobileTab}
+            onTabChange={(tab) => {
+              setMobileTab(tab);
+              setMobileDrawerOpen(true);
+            }}
+            zoomPercent={Math.round((userZoom || 1) * 100)}
           />
         )}
+
       </main>
 
       {!isMobile && (
         <aside className="sidebar right">
-          <DesktopBackgroundPanel
-            backgroundMode={backgroundMode}
-            setBackgroundMode={setBackgroundMode}
-            bgPrimary={bgPrimary}
-            setBgPrimary={setBgPrimary}
-            bgSecondary={bgSecondary}
-            setBgSecondary={setBgSecondary}
-          />
-          <DesktopTemplatePanel templateId={templateId} applyTemplate={applyTemplate} />
           <DesktopInspectorPanel
             selectedItem={selectedItem}
             selectedSlot={selectedSlot}
@@ -3289,42 +3295,7 @@ export default function App() {
         </aside>
       )}
 
-      {isMobile && (
-        <MobileDrawer
-          panel={mobilePanel}
-          open={mobilePanelOpen}
-          onClose={closeMobilePanel}
-          images={images}
-          addImageToCanvas={addImageToCanvas}
-          slides={slides}
-          setSlides={setSlides}
-          ratioKey={ratioKey}
-          setRatioKey={setRatioKey}
-          fileRef={fileRef}
-          addText={addText}
-          exportProject={exportProject}
-          importRef={importRef}
-          backgroundMode={backgroundMode}
-          setBackgroundMode={setBackgroundMode}
-          bgPrimary={bgPrimary}
-          setBgPrimary={setBgPrimary}
-          bgSecondary={bgSecondary}
-          setBgSecondary={setBgSecondary}
-          templateId={templateId}
-          applyTemplate={applyTemplate}
-          selectedItem={selectedItem}
-          selectedSlot={selectedSlot}
-          updateElement={updateElement}
-          updateSlot={updateSlot}
-          showGuides={showGuides}
-          setShowGuides={setShowGuides}
-          previews={previews}
-          downloadDataUrl={downloadDataUrl}
-          downloadAll={downloadAll}
-          shareDataUrlToIOS={shareDataUrlToIOS}
-          addSticker={addSticker}
-        />
-      )}
+      {isMobile && <MobileDrawerUI {...mobileDrawerProps} />}
 
       <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onUploadFiles} />
       <input ref={importRef} type="file" accept="application/json" hidden onChange={importProject} />
