@@ -226,23 +226,24 @@ function clampDraggedPositionForRotatedBox(
   let nextX = x;
   let nextY = y;
 
-  const minLeft = -EDGE_OVERDRAG;
-  const maxRight = canvasW + EDGE_OVERDRAG;
-  const minTop = -EDGE_OVERDRAG;
-  const maxBottom = canvasH + EDGE_OVERDRAG;
+  // 用中心點限制，而不是直接限制四個邊。
+  // 這樣大圖不會一拖就被吸到畫布邊。
+  const geoWidth = geo.right - geo.left;
+  const geoHeight = geo.bottom - geo.top;
 
-  if (geo.left < minLeft) {
-    nextX += minLeft - geo.left;
-  }
-  if (geo.right > maxRight) {
-    nextX -= geo.right - maxRight;
-  }
-  if (geo.top < minTop) {
-    nextY += minTop - geo.top;
-  }
-  if (geo.bottom > maxBottom) {
-    nextY -= geo.bottom - maxBottom;
-  }
+  const marginX = Math.max(EDGE_OVERDRAG, geoWidth * 0.35, canvasW * 0.18);
+  const marginY = Math.max(EDGE_OVERDRAG, geoHeight * 0.35, canvasH * 0.18);
+
+  const minCenterX = -marginX;
+  const maxCenterX = canvasW + marginX;
+  const minCenterY = -marginY;
+  const maxCenterY = canvasH + marginY;
+
+  const clampedCenterX = clamp(geo.centerX, minCenterX, maxCenterX);
+  const clampedCenterY = clamp(geo.centerY, minCenterY, maxCenterY);
+
+  nextX += clampedCenterX - geo.centerX;
+  nextY += clampedCenterY - geo.centerY;
 
   return { x: nextX, y: nextY };
 }
