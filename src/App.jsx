@@ -60,6 +60,7 @@ const MAX_ZOOM = 3;
 const ROTATION_SNAPS = [0, 45, 90, 135, 180, 225, 270, 315];
 const SLOT_NUDGE = 24;
 const SLOT_ZOOM_STEP = 0.08;
+const STORAGE_KEY = "scrl_draft_v1";
 
 function uid(prefix = "id") {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
@@ -1445,6 +1446,7 @@ export default function App() {
   const [historyPast, setHistoryPast] = useState([]);
   const [historyFuture, setHistoryFuture] = useState([]);
   const historyLockRef = useRef(false);
+  const hasHydratedDraftRef = useRef(false);
 
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth <= 768 : false
@@ -1511,6 +1513,84 @@ export default function App() {
     const snap = captureSnapshot();
     setHistoryPast((prev) => [...prev.slice(-49), snap]);
     setHistoryFuture([]);
+  };
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        setTimeout(() => {
+          hasHydratedDraftRef.current = true;
+        }, 0);
+        return;
+      }
+
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") {
+        setTimeout(() => {
+          hasHydratedDraftRef.current = true;
+        }, 0);
+        return;
+      }
+
+      const snap = parsed.snapshot || parsed;
+
+      if (
+        snap &&
+        typeof snap === "object" &&
+        snap.slides &&
+        snap.ratioKey &&
+        snap.backgroundMode
+      ) {
+        historyLockRef.current = true;
+        applySnapshot(snap);
+        setHistoryPast([]);
+        setHistoryFuture([]);
+        setTimeout(() => {
+          historyLockRef.current = false;
+          hasHydratedDraftRef.current = true;
+        }, 0);
+        return;
+      }
+    } catch (err) {
+      console.error("Failed to restore draft:", err);
+    }
+
+    setTimeout(() => {
+      hasHydratedDraftRef.current = true;
+    }, 0);
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydratedDraftRef.current) return;
+
+    try {
+      const payload = {
+        savedAt: Date.now(),
+        snapshot: captureSnapshot(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (err) {
+      console.error("Failed to save draft:", err);
+    }
+  }, [
+    slides,
+    ratioKey,
+    backgroundMode,
+    bgPrimary,
+    bgSecondary,
+    images,
+    elements,
+    templateSlots,
+    templateId,
+  ]);
+
+  const clearSavedDraft = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (err) {
+      console.error("Failed to clear draft:", err);
+    }
   };
 
   const undo = () => {
@@ -2690,6 +2770,7 @@ export default function App() {
                   <button className="ghost" onClick={undo}>上一步</button>
                   <button className="ghost" onClick={redo}>下一步</button>
                   <button className="ghost danger" onClick={removeSelected}>刪除</button>
+                  <button className="ghost" onClick={clearSavedDraft}>清稿</button>
                   <button onClick={() => {
                     setMobileTab("preview");
                     setMobileDrawerOpen(true);
