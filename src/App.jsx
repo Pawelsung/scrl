@@ -14,6 +14,8 @@ import ProjectPanelUI from "./components/panels/ProjectPanel";
 import PreviewPanelUI from "./components/panels/PreviewPanel";
 import MobileBottomBarUI from "./components/mobile/MobileBottomBar";
 import MobileDrawerUI from "./components/mobile/MobileDrawer";
+import BottomAssetTray from "./components/mobile/BottomAssetTray";
+import MobileBottomDock from "./components/mobile/MobileBottomDock";
 
 const RATIOS = {
   "4:5": { w: 1080, h: 1350 },
@@ -29,6 +31,7 @@ const TEMPLATES = [
   { id: "film", name: "底片拼貼" },
   { id: "split", name: "左右文圖" },
   { id: "frame", name: "留白框版型" },
+  { id: "grid4", name: "四格拼貼" },
 ];
 
 const FONT_OPTIONS = [
@@ -271,6 +274,32 @@ function snapRotationAngle(angle, snaps = ROTATION_SNAPS, tolerance = 12) {
   }
 
   return bestDiff <= tolerance ? best : normalized;
+}
+
+function pointInRotatedRect(px, py, x, y, width, height, rotation = 0, padding = 24) {
+  const cx = x + width / 2;
+  const cy = y + height / 2;
+  const rad = (-rotation * Math.PI) / 180;
+
+  const dx = px - cx;
+  const dy = py - cy;
+
+  const localX = dx * Math.cos(rad) - dy * Math.sin(rad) + width / 2;
+  const localY = dx * Math.sin(rad) + dy * Math.cos(rad) + height / 2;
+
+  return (
+    localX >= -padding &&
+    localX <= width + padding &&
+    localY >= -padding &&
+    localY <= height + padding
+  );
+}
+
+function touchPointToCanvasPoint(touch, pan, displayScale) {
+  return {
+    x: (touch.clientX - pan.x) / displayScale,
+    y: (touch.clientY - pan.y) / displayScale,
+  };
 }
 
 function createSlot({
@@ -565,6 +594,19 @@ function DraggableText({
 
   return (
     <>
+      {editing && (
+        <Rect
+          x={-18}
+          y={-18}
+          width={item.width + 36}
+          height={Math.max(item.fontSize * 1.8, 56)}
+          fill="rgba(255,255,255,0.001)"
+          listening
+          onClick={onSelect}
+          onTap={onSelect}
+        />
+      )}
+
       <Text
         ref={textRef}
         x={item.x}
@@ -1008,6 +1050,14 @@ function TemplateSlot({
             : undefined
         }
       >
+        <Rect
+          width={slot.width}
+          height={slot.height}
+          cornerRadius={slot.radius || 0}
+          fill="rgba(255,255,255,0.001)"
+          listening={editing}
+        />
+
         <Group
           clipFunc={(ctx) => {
             roundedRectPath(ctx, slot.width, slot.height, slot.radius || 0);
@@ -1120,7 +1170,7 @@ function InspectorContent({
   showGuides,
 }) {
   if (!selectedItem && !selectedSlot) {
-    return <div className="hint-card">點一下畫布中的圖片、文字、貼紙或模板圖框。</div>;
+    return <div className="hint-card">點一下畫布中的圖片、文字、貼紙或模板圖框。若想操作畫布本身，請先按「取消選取」。</div>;
   }
 
   if (selectedSlot) {
@@ -1402,10 +1452,28 @@ function DesktopInspectorPanel({
   updateSlot,
   setShowGuides,
   showGuides,
+  onBringForward,
+  onSendBackward,
+  onDuplicate,
+  onRemove,
+  onClearSelection,
 }) {
+  const hasSelection = !!selectedItem || !!selectedSlot;
+
   return (
     <div className="panel">
       <h2>選取物件</h2>
+
+      {hasSelection && (
+        <div className="desktop-layer-actions">
+          <button className="ghost" onClick={onSendBackward}>下移</button>
+          <button className="ghost" onClick={onBringForward}>上移</button>
+          {!!selectedItem && <button className="ghost" onClick={onDuplicate}>複製</button>}
+          <button className="ghost danger" onClick={onRemove}>刪除</button>
+          <button className="ghost" onClick={onClearSelection}>取消</button>
+        </div>
+      )}
+
       <InspectorContent
         selectedItem={selectedItem}
         selectedSlot={selectedSlot}
@@ -1447,6 +1515,7 @@ export default function App() {
   const [historyFuture, setHistoryFuture] = useState([]);
   const historyLockRef = useRef(false);
   const hasHydratedDraftRef = useRef(false);
+  const autosaveTimerRef = useRef(null);
 
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth <= 768 : false
@@ -1472,6 +1541,9 @@ export default function App() {
     pinchStartPan: { x: 0, y: 0 },
     pinchCenter: { x: 0, y: 0 },
     pinchStartObject: null,
+    pinchTargetType: null,
+    pinchTargetId: null,
+    pinchLocked: false,
   });
 
   const singleW = RATIOS[ratioKey].w;
@@ -1563,16 +1635,29 @@ export default function App() {
 
   useEffect(() => {
     if (!hasHydratedDraftRef.current) return;
+    if (isInteracting) return;
 
-    try {
-      const payload = {
-        savedAt: Date.now(),
-        snapshot: captureSnapshot(),
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    } catch (err) {
-      console.error("Failed to save draft:", err);
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
     }
+
+    autosaveTimerRef.current = setTimeout(() => {
+      try {
+        const payload = {
+          savedAt: Date.now(),
+          snapshot: captureSnapshot(),
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      } catch (err) {
+        console.error("Failed to save draft:", err);
+      }
+    }, isMobile ? 1400 : 900);
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+      }
+    };
   }, [
     slides,
     ratioKey,
@@ -1583,6 +1668,8 @@ export default function App() {
     elements,
     templateSlots,
     templateId,
+    isInteracting,
+    isMobile,
   ]);
 
   const clearSavedDraft = () => {
@@ -1762,8 +1849,7 @@ export default function App() {
 
   const clearSelection = () => {
     setSelectedId(null);
-    setSelectedSlotId(null);
-  };
+    setSelectedSlotId(null);  };
 
   const duplicateSelected = () => {
     if (!selectedItem) return;
@@ -1865,19 +1951,26 @@ export default function App() {
     });
   };
 
+  const applyPinchToSelectedSlot = (ratio, angleDelta) => {
+    const start = gestureRef.current.pinchStartObject;
+    const targetId = gestureRef.current.pinchTargetId;
+    if (!start || !targetId) return;
+
+    setTemplateSlots((prev) =>
+      prev.map((slot) =>
+        slot.id === targetId
+          ? {
+              ...slot,
+              width: Math.max(80, start.width * ratio),
+              height: Math.max(80, start.height * ratio),
+              rotation: normalizeRotation(start.rotation + angleDelta),
+            }
+          : slot
+      )
+    );
+  };
+
   const applyPinchToSelectedObject = (ratio, angleDelta) => {
-    if (selectedSlot) {
-      const start = gestureRef.current.pinchStartObject;
-      if (!start) return;
-
-      updateSlot({
-        ...selectedSlot,
-        imageZoom: clamp(start.imageZoom * ratio, 1, 3),
-        rotation: normalizeRotation(start.rotation + angleDelta),
-      });
-      return;
-    }
-
     if (selectedItem && (selectedItem.type === "image" || selectedItem.type === "sticker")) {
       const start = gestureRef.current.pinchStartObject;
       if (!start) return;
@@ -1893,6 +1986,7 @@ export default function App() {
 
   const canPinchSelectedObject =
     !!selectedSlot || !!(selectedItem && (selectedItem.type === "image" || selectedItem.type === "sticker"));
+
 
   const addImageToCanvas = (img) => {
     pushHistory();
@@ -2054,6 +2148,30 @@ export default function App() {
     pushHistory();
     setElements((prev) => {
       const idx = prev.findIndex((el) => el.id === selectedId);
+      if (idx <= 0) return prev;
+      const arr = [...prev];
+      [arr[idx], arr[idx - 1]] = [arr[idx - 1], arr[idx]];
+      return arr;
+    });
+  };
+
+  const bringForwardSlot = () => {
+    if (!selectedSlotId) return;
+    pushHistory();
+    setTemplateSlots((prev) => {
+      const idx = prev.findIndex((slot) => slot.id === selectedSlotId);
+      if (idx < 0 || idx === prev.length - 1) return prev;
+      const arr = [...prev];
+      [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
+      return arr;
+    });
+  };
+
+  const sendBackwardSlot = () => {
+    if (!selectedSlotId) return;
+    pushHistory();
+    setTemplateSlots((prev) => {
+      const idx = prev.findIndex((slot) => slot.id === selectedSlotId);
       if (idx <= 0) return prev;
       const arr = [...prev];
       [arr[idx], arr[idx - 1]] = [arr[idx - 1], arr[idx]];
@@ -2261,6 +2379,79 @@ export default function App() {
       });
     }
 
+    if (id === "grid4") {
+      const outerPad = 72;
+      const gap = 20;
+
+      const frameW = canvasW - outerPad * 2;
+      const frameH = canvasH - outerPad * 2;
+
+      const cellW = (frameW - gap) / 2;
+      const cellH = (frameH - gap) / 2;
+
+      nextSlots.push(
+        createSlot({
+          x: outerPad,
+          y: outerPad,
+          width: cellW,
+          height: cellH,
+          radius: 24,
+          stroke: "#ffffff",
+          strokeWidth: 6,
+          fill: "rgba(255,255,255,0.04)",
+          label: "Photo 1",
+        }),
+        createSlot({
+          x: outerPad + cellW + gap,
+          y: outerPad,
+          width: cellW,
+          height: cellH,
+          radius: 24,
+          stroke: "#ffffff",
+          strokeWidth: 6,
+          fill: "rgba(255,255,255,0.04)",
+          label: "Photo 2",
+        }),
+        createSlot({
+          x: outerPad,
+          y: outerPad + cellH + gap,
+          width: cellW,
+          height: cellH,
+          radius: 24,
+          stroke: "#ffffff",
+          strokeWidth: 6,
+          fill: "rgba(255,255,255,0.04)",
+          label: "Photo 3",
+        }),
+        createSlot({
+          x: outerPad + cellW + gap,
+          y: outerPad + cellH + gap,
+          width: cellW,
+          height: cellH,
+          radius: 24,
+          stroke: "#ffffff",
+          strokeWidth: 6,
+          fill: "rgba(255,255,255,0.04)",
+          label: "Photo 4",
+        })
+      );
+
+      nextManagedElements.push({
+        id: uid("text"),
+        type: "text",
+        text: "Grid Collage",
+        x: 96,
+        y: 20,
+        width: 420,
+        fontSize: 40,
+        fontStyle: "bold",
+        fill: "#ffffff",
+        align: "left",
+        opacity: 1,
+        isTemplateManaged: true,
+      });
+    }
+
     setTemplateSlots(nextSlots);
     setElements((prev) => [
       ...prev.filter((el) => !el.isTemplateManaged),
@@ -2312,7 +2503,7 @@ export default function App() {
 
     const timer = setTimeout(() => {
       refreshPreviews();
-    }, 320);
+    }, isMobile ? 900 : 500);
 
     return () => clearTimeout(timer);
   }, [
@@ -2541,6 +2732,7 @@ export default function App() {
   const handleViewportTouchStart = (e) => {
     if (e.touches.length === 2) {
       e.preventDefault();
+      setIsInteracting(true);
       const distance = getDistance(e.touches);
       const midpoint = getMidpoint(e.touches);
       const angle = getAngle(e.touches);
@@ -2551,28 +2743,51 @@ export default function App() {
       gestureRef.current.pinchStartPan = { ...pan };
       gestureRef.current.pinchCenter = midpoint;
       gestureRef.current.isPanning = false;
+      gestureRef.current.pinchLocked = true;
       setIsInteracting(true);
 
-      if (canPinchSelectedObject) {
+      const hasSelectedTarget =
+        !!selectedSlot ||
+        !!(selectedItem && (selectedItem.type === "image" || selectedItem.type === "sticker"));
+
+      // 規則：
+      // 1) 有選取物件時，完全禁止 viewport pinch
+      // 2) 只有雙指都命中被選物件，才允許 object pinch
+      // 3) 否則直接 blocked，什麼都不做
+      if (hasSelectedTarget) {
         pushHistory();
         gestureRef.current.pinchMode = "object";
 
         if (selectedSlot) {
+          gestureRef.current.pinchTargetType = "slot";
+          gestureRef.current.pinchTargetId = selectedSlot.id;
           gestureRef.current.pinchStartObject = {
-            imageZoom: selectedSlot.imageZoom || 1,
+            width: selectedSlot.width,
+            height: selectedSlot.height,
             rotation: selectedSlot.rotation || 0,
           };
-        } else if (selectedItem) {
+          gestureRef.current.pinchCenter = midpoint;
+          return;
+        }
+
+        if (selectedItem && (selectedItem.type === "image" || selectedItem.type === "sticker")) {
+          gestureRef.current.pinchTargetType = "item";
+          gestureRef.current.pinchTargetId = selectedItem.id;
           gestureRef.current.pinchStartObject = {
             width: selectedItem.width,
             height: selectedItem.height,
             rotation: selectedItem.rotation || 0,
           };
+          return;
         }
-      } else {
-        gestureRef.current.pinchMode = "viewport";
-        gestureRef.current.pinchStartObject = null;
+
       }
+
+      // 只有完全沒選物件時，才允許 viewport pinch
+      gestureRef.current.pinchTargetType = null;
+      gestureRef.current.pinchTargetId = null;
+      gestureRef.current.pinchMode = "viewport";
+      gestureRef.current.pinchStartObject = null;
       return;
     }
 
@@ -2604,8 +2819,25 @@ export default function App() {
       const currentAngle = getAngle(e.touches);
       const angleDelta = getShortestAngleDelta(currentAngle, gestureRef.current.pinchStartAngle);
 
-      if (gestureRef.current.pinchMode === "object") {
-        applyPinchToSelectedObject(ratio, angleDelta);
+      const hasSelectedTarget =
+        !!selectedSlot ||
+        !!(selectedItem && (selectedItem.type === "image" || selectedItem.type === "sticker"));
+
+      if (hasSelectedTarget) {
+        e.preventDefault();
+
+        if (gestureRef.current.pinchMode === "object") {
+          if (gestureRef.current.pinchTargetType === "slot") {
+            applyPinchToSelectedSlot(ratio, angleDelta);
+            return;
+          }
+
+          if (gestureRef.current.pinchTargetType === "item") {
+            applyPinchToSelectedObject(ratio, angleDelta);
+            return;
+          }
+        }
+
         return;
       }
 
@@ -2659,6 +2891,9 @@ export default function App() {
     gestureRef.current.isPanning = false;
     gestureRef.current.pinchMode = "viewport";
     gestureRef.current.pinchStartObject = null;
+    gestureRef.current.pinchTargetType = null;
+    gestureRef.current.pinchTargetId = null;
+    gestureRef.current.pinchLocked = false;
     setIsInteracting(false);
   };
 
@@ -2718,6 +2953,15 @@ export default function App() {
   const handleExportJson = () => exportProject();
   const handleImportJson = () => importRef.current?.click();
   const handleTemplateSelect = (id) => applyTemplate(id);
+
+  const mobileSelectedActions = {
+    hasSelection: !!selectedItem || !!selectedSlot,
+    canReorder: !!selectedItem || !!selectedSlot,
+    onBringForward: selectedSlot ? bringForwardSlot : bringForward,
+    onSendBackward: selectedSlot ? sendBackwardSlot : sendBackward,
+    onDuplicate: duplicateSelected,
+    onRemove: removeSelected,
+  };
   const handleAddAssetToCanvas = (asset) => addImageToCanvas(asset);
   const handleAddStickerToCanvas = (sticker) => addSticker(sticker.stickerType || sticker.type);
 
@@ -2796,6 +3040,7 @@ export default function App() {
                 <>
                   <button className="ghost" onClick={undo}>上一步</button>
                   <button className="ghost" onClick={redo}>下一步</button>
+                  <button type="button" className="ghost" onClick={clearSelection}>取消</button>
                   <button type="button" className="ghost danger" onClick={removeSelected}>刪除</button>
                   <button type="button" className="ghost" onClick={clearSavedDraft}>清稿</button>
                   <button onClick={() => {
@@ -2850,10 +3095,14 @@ export default function App() {
                     width={canvasW}
                     height={canvasH}
                     onMouseDown={(e) => {
+                      if (isInteracting) return;
                       const clickedOnEmpty = e.target === e.target.getStage();
                       if (clickedOnEmpty) clearSelection();
                     }}
                     onTouchStart={(e) => {
+                      if (isInteracting) return;
+                      const touchCount = e.evt?.touches?.length || 0;
+                      if (touchCount > 1) return;
                       const clickedOnEmpty = e.target === e.target.getStage();
                       if (clickedOnEmpty) clearSelection();
                     }}
@@ -2871,8 +3120,7 @@ export default function App() {
                               isSelected={item.id === selectedId}
                               onSelect={() => {
                                 setSelectedId(item.id);
-                                setSelectedSlotId(null);
-                              }}
+                                setSelectedSlotId(null);                              }}
                               onChange={updateElement}
                               snapGuides={snapGuides}
                               canvasW={canvasW}
@@ -2895,8 +3143,7 @@ export default function App() {
                               isSelected={item.id === selectedId}
                               onSelect={() => {
                                 setSelectedId(item.id);
-                                setSelectedSlotId(null);
-                              }}
+                                setSelectedSlotId(null);                              }}
                               onChange={updateElement}
                               snapGuides={snapGuides}
                               canvasW={canvasW}
@@ -2917,8 +3164,7 @@ export default function App() {
                               isSelected={item.id === selectedId}
                               onSelect={() => {
                                 setSelectedId(item.id);
-                                setSelectedSlotId(null);
-                              }}
+                                setSelectedSlotId(null);                              }}
                               onChange={updateElement}
                               snapGuides={snapGuides}
                               canvasW={canvasW}
@@ -3016,14 +3262,29 @@ export default function App() {
         </div>
         {!isMobile && <PreviewPanelUI {...previewPanelProps} />}
 
+        {!isMobile && (
+          <BottomAssetTray
+            images={images}
+            selectedSlot={selectedSlot}
+            onPickImage={addImageToCanvas}
+            persistent={false}
+          />
+        )}
+
         {isMobile && (
-          <MobileBottomBarUI
+          <MobileBottomDock
+            images={images}
+            selectedSlot={selectedSlot}
+            onPickImage={addImageToCanvas}
             activeTab={mobileTab}
             onTabChange={(tab) => {
               setMobileTab(tab);
               setMobileDrawerOpen(true);
             }}
             zoomPercent={Math.round((userZoom || 1) * 100)}
+            hidden={mobileDrawerOpen}
+            selectedActions={mobileSelectedActions}
+            onClearSelection={clearSelection}
           />
         )}
 
@@ -3038,6 +3299,11 @@ export default function App() {
             updateSlot={updateSlot}
             setShowGuides={setShowGuides}
             showGuides={showGuides}
+            onBringForward={selectedSlot ? bringForwardSlot : bringForward}
+            onSendBackward={selectedSlot ? sendBackwardSlot : sendBackward}
+            onDuplicate={duplicateSelected}
+            onRemove={removeSelected}
+            onClearSelection={clearSelection}
           />
         </aside>
       )}
