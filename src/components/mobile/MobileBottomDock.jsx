@@ -27,6 +27,38 @@ export default function MobileBottomDock({
 
       {(selectedActions?.hasSelection || onClearSelection) && (
         <div className="mobile-dock-actions">
+          {selectedActions?.hasSelection && (
+            <>
+              <button type="button" className="ghost" onClick={selectedActions.onScaleDown}>
+                -
+              </button>
+              <button type="button" className="ghost" onClick={selectedActions.onScaleUp}>
+                +
+              </button>
+              <button type="button" className="ghost" onClick={selectedActions.onNudgeUp}>
+                ↑
+              </button>
+              <button type="button" className="ghost" onClick={selectedActions.onNudgeLeft}>
+                ←
+              </button>
+              <button type="button" className="ghost" onClick={selectedActions.onNudgeDown}>
+                ↓
+              </button>
+              <button type="button" className="ghost" onClick={selectedActions.onNudgeRight}>
+                →
+              </button>
+              <button type="button" className="ghost" onClick={selectedActions.onFit45}>
+                4:5
+              </button>
+              <button type="button" className="ghost" onClick={selectedActions.onSpanTwoSlides}>
+                跨兩張
+              </button>
+              <button type="button" className="ghost" onClick={selectedActions.onRotate90}>
+                旋轉90
+              </button>
+            </>
+          )}
+
           {selectedActions?.hasSelection && selectedActions.canReorder && (
             <>
               <button type="button" className="ghost" onClick={selectedActions.onSendBackward}>

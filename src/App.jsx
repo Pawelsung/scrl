@@ -1094,15 +1094,31 @@ function SelectionTransformer({
   );
 }
 
+function SelectionQuickControls({ actions, compact = false }) {
+  if (!actions?.hasSelection) return null;
 
+  return (
+    <div className={`selection-quick-controls ${compact ? "compact" : ""}`}>
+      <div className="quick-control-group">
+        <button type="button" className="ghost" onClick={actions.onScaleDown}>-</button>
+        <button type="button" className="ghost" onClick={actions.onScaleUp}>+</button>
+        <button type="button" className="ghost" onClick={actions.onRotate90}>旋轉90</button>
+      </div>
 
+      <div className="quick-control-group nudge">
+        <button type="button" className="ghost" onClick={actions.onNudgeUp}>↑</button>
+        <button type="button" className="ghost" onClick={actions.onNudgeLeft}>←</button>
+        <button type="button" className="ghost" onClick={actions.onNudgeDown}>↓</button>
+        <button type="button" className="ghost" onClick={actions.onNudgeRight}>→</button>
+      </div>
 
-
-
-
-
-
-
+      <div className="quick-control-group">
+        <button type="button" className="ghost" onClick={actions.onFit45}>4:5</button>
+        <button type="button" className="ghost" onClick={actions.onSpanTwoSlides}>跨兩張</button>
+      </div>
+    </div>
+  );
+}
 
 function InspectorContent({
   selectedItem,
@@ -1400,6 +1416,7 @@ function DesktopInspectorPanel({
   onDuplicate,
   onRemove,
   onClearSelection,
+  selectedActions,
 }) {
   const hasSelection = !!selectedItem || !!selectedSlot;
 
@@ -1408,13 +1425,16 @@ function DesktopInspectorPanel({
       <h2>選取物件</h2>
 
       {hasSelection && (
-        <div className="desktop-layer-actions">
-          <button className="ghost" onClick={onSendBackward}>下移</button>
-          <button className="ghost" onClick={onBringForward}>上移</button>
-          {!!selectedItem && <button className="ghost" onClick={onDuplicate}>複製</button>}
-          <button className="ghost danger" onClick={onRemove}>刪除</button>
-          <button className="ghost" onClick={onClearSelection}>取消</button>
-        </div>
+        <>
+          <SelectionQuickControls actions={selectedActions} />
+          <div className="desktop-layer-actions">
+            <button className="ghost" onClick={onSendBackward}>下移</button>
+            <button className="ghost" onClick={onBringForward}>上移</button>
+            {!!selectedItem && <button className="ghost" onClick={onDuplicate}>複製</button>}
+            <button className="ghost danger" onClick={onRemove}>刪除</button>
+            <button className="ghost" onClick={onClearSelection}>取消</button>
+          </div>
+        </>
       )}
 
       <InspectorContent
@@ -1999,6 +2019,70 @@ export default function App() {
       ...selectedSlot,
       imageZoom: clamp((selectedSlot.imageZoom || 1) + dir * SLOT_ZOOM_STEP, 1, 3),
     });
+  };
+
+  const updateSelectedBox = (updater) => {
+    const target = selectedSlot || selectedItem;
+    if (!target) return;
+    pushHistory();
+    const next = updater(target);
+    if (selectedSlot) updateSlot(next);
+    if (selectedItem) updateElement(next);
+  };
+
+  const nudgeSelectedBox = (dx, dy) => {
+    updateSelectedBox((target) => ({
+      ...target,
+      x: (target.x || 0) + dx,
+      y: (target.y || 0) + dy,
+    }));
+  };
+
+  const scaleSelectedBox = (factor) => {
+    updateSelectedBox((target) => {
+      if (target.type === "text") {
+        return {
+          ...target,
+          fontSize: Math.max(12, (target.fontSize || 40) * factor),
+          width: Math.max(120, (target.width || 400) * factor),
+        };
+      }
+
+      return {
+        ...target,
+        width: Math.max(selectedSlot ? 80 : 40, (target.width || 120) * factor),
+        height: Math.max(selectedSlot ? 80 : 40, (target.height || 120) * factor),
+      };
+    });
+  };
+
+  const setSelectedBoxAspect = (widthRatio, heightRatio) => {
+    updateSelectedBox((target) => {
+      const width = Math.max(selectedSlot ? 80 : 40, target.width || 240);
+      return {
+        ...target,
+        width,
+        height: Math.max(selectedSlot ? 80 : 40, width * (heightRatio / widthRatio)),
+      };
+    });
+  };
+
+  const spanSelectedBoxAcrossTwoSlides = () => {
+    updateSelectedBox((target) => {
+      const height = Math.max(selectedSlot ? 80 : 40, target.height || singleH);
+      return {
+        ...target,
+        width: singleW * 2,
+        height,
+      };
+    });
+  };
+
+  const rotateSelectedBox90 = () => {
+    updateSelectedBox((target) => ({
+      ...target,
+      rotation: normalizeRotation((target.rotation || 0) + 90),
+    }));
   };
 
   const clearSelectedSlotImage = () => {
@@ -2769,6 +2853,19 @@ export default function App() {
         if (!editable && (selectedId || selectedSlotId)) removeSelected();
       }
 
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        const activeTag = document.activeElement?.tagName?.toLowerCase();
+        const editable = activeTag === "input" || activeTag === "textarea" || activeTag === "select";
+        if (!editable && (selectedId || selectedSlotId)) {
+          e.preventDefault();
+          const step = e.shiftKey ? 24 : 8;
+          if (e.key === "ArrowUp") nudgeSelectedBox(0, -step);
+          if (e.key === "ArrowDown") nudgeSelectedBox(0, step);
+          if (e.key === "ArrowLeft") nudgeSelectedBox(-step, 0);
+          if (e.key === "ArrowRight") nudgeSelectedBox(step, 0);
+        }
+      }
+
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") {
         e.preventDefault();
         duplicateSelected();
@@ -2777,7 +2874,7 @@ export default function App() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedId, selectedSlotId, selectedItem, historyPast, historyFuture]);
+  }, [selectedId, selectedSlotId, selectedItem, selectedSlot, historyPast, historyFuture]);
 
   const onWheelScaleSelected = (e) => {
     if (!(e.evt.ctrlKey || e.evt.metaKey)) return;
@@ -3119,6 +3216,15 @@ export default function App() {
   const mobileSelectedActions = {
     hasSelection: !!selectedItem || !!selectedSlot,
     canReorder: !!selectedItem || !!selectedSlot,
+    onScaleDown: () => scaleSelectedBox(0.92),
+    onScaleUp: () => scaleSelectedBox(1.08),
+    onNudgeUp: () => nudgeSelectedBox(0, -8),
+    onNudgeDown: () => nudgeSelectedBox(0, 8),
+    onNudgeLeft: () => nudgeSelectedBox(-8, 0),
+    onNudgeRight: () => nudgeSelectedBox(8, 0),
+    onFit45: () => setSelectedBoxAspect(4, 5),
+    onSpanTwoSlides: spanSelectedBoxAcrossTwoSlides,
+    onRotate90: rotateSelectedBox90,
     onBringForward: selectedSlot ? bringForwardSlot : bringForward,
     onSendBackward: selectedSlot ? sendBackwardSlot : sendBackward,
     onDuplicate: duplicateSelected,
@@ -3528,6 +3634,7 @@ export default function App() {
             onDuplicate={duplicateSelected}
             onRemove={removeSelected}
             onClearSelection={clearSelection}
+            selectedActions={mobileSelectedActions}
           />
           <PreviewPanelUI {...previewPanelProps} />
         </aside>

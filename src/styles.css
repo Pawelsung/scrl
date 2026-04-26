@@ -1139,15 +1139,39 @@ button.danger {
   min-width: 72px;
 }
 
+.selection-quick-controls {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.quick-control-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quick-control-group button {
+  min-width: 48px;
+  padding: 10px 12px;
+}
+
 .mobile-dock-actions {
   display: flex;
   gap: 8px;
   padding: 0 2px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.mobile-dock-actions::-webkit-scrollbar {
+  display: none;
 }
 
 .mobile-dock-actions button {
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 0 0 auto;
+  min-width: 46px;
   padding: 10px 8px;
   border-radius: 12px;
   font-size: 13px;
