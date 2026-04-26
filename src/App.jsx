@@ -2620,15 +2620,22 @@ export default function App() {
     a.click();
   };
 
-  const dataUrlToBlob = async (dataUrl) => {
-    const res = await fetch(dataUrl);
-    return await res.blob();
+  const dataUrlToFile = (dataUrl, filename) => {
+    const [meta, base64] = dataUrl.split(",");
+    const mime = meta.match(/data:(.*?);base64/)?.[1] || "image/png";
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    return new File([bytes], filename, { type: mime });
   };
 
   const shareDataUrlToIOS = async (dataUrl, filename) => {
     try {
-      const blob = await dataUrlToBlob(dataUrl);
-      const file = new File([blob], filename, { type: "image/png" });
+      const file = dataUrlToFile(dataUrl, filename);
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
