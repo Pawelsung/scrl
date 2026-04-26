@@ -2,21 +2,21 @@
   "name": "SCRL",
   "short_name": "SCRL",
   "description": "Mobile-first carousel and canvas editor",
-  "start_url": "/scrl/",
-  "scope": "/scrl/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/scrl/pwa-icon.svg",
+      "src": "pwa-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/scrl/pwa-maskable.svg",
+      "src": "pwa-maskable.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"

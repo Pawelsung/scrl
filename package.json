@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
-    "preview": "vite preview --host"
+    "build:github": "VITE_BASE_PATH=/scrl/ vite build",
+    "preview": "vite preview --host",
+    "deploy:firebase": "npm run build && firebase deploy --only hosting"
   },
   "dependencies": {
     "konva": "^9.3.18",
@@ -16,6 +18,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.4.1",
+    "firebase-tools": "^15.15.0",
     "vite": "^5.4.18"
   }
 }
