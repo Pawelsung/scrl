@@ -3112,10 +3112,18 @@ export default function App() {
       id: `preview-${idx + 1}`,
       src,
     })),
-    onDownloadOne: (preview, index) =>
-      downloadDataUrl(preview.src, `carousel_${String(index + 1).padStart(2, "0")}.png`),
-    onSaveOne: (preview, index) =>
-      shareDataUrlToIOS(preview.src, `carousel_${String(index + 1).padStart(2, "0")}.png`),
+    onDownloadOne: (preview, index) => {
+      const filename = `carousel_${String(index + 1).padStart(2, "0")}.png`;
+      if (isMobile) {
+        shareDataUrlToIOS(preview.src, filename);
+      } else {
+        downloadDataUrl(preview.src, filename);
+      }
+    },
+    onSaveOne: isMobile
+      ? (preview, index) =>
+          shareDataUrlToIOS(preview.src, `carousel_${String(index + 1).padStart(2, "0")}.png`)
+      : null,
     onDownloadAll: downloadAll,
     isBusy: isExporting,
     defaultCollapsed: !isMobile,
