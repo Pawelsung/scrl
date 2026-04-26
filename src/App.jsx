@@ -1491,6 +1491,7 @@ export default function App() {
   const [isInteracting, setIsInteracting] = useState(false);
   const isInteractingRef = useRef(false);
   const [previewExpandSignal, setPreviewExpandSignal] = useState(0);
+  const [saveFallback, setSaveFallback] = useState(null);
   const selectableNodesRef = useRef(new Map());
   const [selectableNodeRevision, setSelectableNodeRevision] = useState(0);
 
@@ -2633,23 +2634,27 @@ export default function App() {
     return new File([bytes], filename, { type: mime });
   };
 
+  const openSaveFallback = (dataUrl, filename) => {
+    setSaveFallback({ src: dataUrl, filename });
+  };
+
   const shareDataUrlToIOS = async (dataUrl, filename) => {
     try {
       const file = dataUrlToFile(dataUrl, filename);
 
-      if (navigator.share) {
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
-          ...(navigator.canShare?.({ files: [file] }) ? { files: [file] } : {}),
+          files: [file],
           title: filename,
           text: "匯出的 carousel 圖片",
         });
         return;
       }
 
-      downloadDataUrl(dataUrl, filename);
+      openSaveFallback(dataUrl, filename);
     } catch (err) {
       console.error(err);
-      downloadDataUrl(dataUrl, filename);
+      openSaveFallback(dataUrl, filename);
     }
   };
 
@@ -3492,6 +3497,40 @@ export default function App() {
       )}
 
       {isMobile && <MobileDrawerUI {...mobileDrawerProps} />}
+
+      {isMobile && saveFallback && (
+        <div className="mobile-save-sheet" role="dialog" aria-modal="true">
+          <div className="mobile-save-sheet__head">
+            <div>
+              <strong>儲存圖片</strong>
+              <span>長按圖片，或開啟圖片後用系統分享儲存。</span>
+            </div>
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => setSaveFallback(null)}
+            >
+              關閉
+            </button>
+          </div>
+
+          <div className="mobile-save-sheet__image">
+            <img src={saveFallback.src} alt="可儲存的切圖" />
+          </div>
+
+          <div className="mobile-save-sheet__actions">
+            <a href={saveFallback.src} target="_blank" rel="noreferrer">
+              開啟圖片
+            </a>
+            <button
+              type="button"
+              onClick={() => downloadDataUrl(saveFallback.src, saveFallback.filename)}
+            >
+              下載
+            </button>
+          </div>
+        </div>
+      )}
 
       <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onUploadFiles} />
       <input ref={importRef} type="file" accept="application/json" hidden onChange={importProject} />
