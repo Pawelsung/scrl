@@ -17,14 +17,6 @@ export default function MobileBottomDock({
 
   return (
     <div className="mobile-bottom-dock">
-      <BottomAssetTray
-        images={images}
-        selectedSlot={selectedSlot}
-        onPickImage={onPickImage}
-        persistent={true}
-        compact={true}
-      />
-
       {(selectedActions?.hasSelection || onClearSelection) && (
         <div className="mobile-dock-actions">
           {selectedActions?.hasSelection && (
@@ -61,11 +53,21 @@ export default function MobileBottomDock({
 
           {selectedActions?.hasSelection && selectedActions.canReorder && (
             <>
-              <button type="button" className="ghost" onClick={selectedActions.onSendBackward}>
-                下移
+              <button
+                type="button"
+                className="ghost"
+                onClick={selectedActions.onUndo}
+                disabled={!selectedActions.canUndo}
+              >
+                復原
               </button>
-              <button type="button" className="ghost" onClick={selectedActions.onBringForward}>
-                上移
+              <button
+                type="button"
+                className="ghost"
+                onClick={selectedActions.onRedo}
+                disabled={!selectedActions.canRedo}
+              >
+                重做
               </button>
               {selectedActions.onDuplicate && (
                 <button type="button" className="ghost" onClick={selectedActions.onDuplicate}>
@@ -85,6 +87,14 @@ export default function MobileBottomDock({
           )}
         </div>
       )}
+
+      <BottomAssetTray
+        images={images}
+        selectedSlot={selectedSlot}
+        onPickImage={onPickImage}
+        persistent={true}
+        compact={true}
+      />
 
       <MobileBottomBar
         activeTab={activeTab}

@@ -1177,6 +1177,10 @@ button.danger {
   font-size: 13px;
 }
 
+.mobile-dock-actions button:disabled {
+  opacity: 0.42;
+}
+
 .mobile-bottom-dock {
   position: fixed;
   left: 12px;
@@ -1587,4 +1591,36 @@ button.danger {
   font: inherit;
   font-weight: 700;
   text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-dock {
+    gap: 6px;
+  }
+
+  .mobile-dock-actions {
+    order: -1;
+    margin: 0;
+    padding: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 16px;
+    background: rgba(13, 20, 33, 0.96);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  }
+
+  .mobile-dock-actions button {
+    min-width: 48px;
+    min-height: 40px;
+    padding: 9px 10px;
+    font-weight: 700;
+  }
+
+  .bottom-asset-tray--compact .bottom-asset-tray__head {
+    display: none;
+  }
+
+  .bottom-asset-tray--compact .bottom-asset-tray__thumb {
+    width: 52px;
+    height: 52px;
+  }
 }

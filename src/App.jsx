@@ -2069,20 +2069,45 @@ export default function App() {
 
   const spanSelectedBoxAcrossTwoSlides = () => {
     updateSelectedBox((target) => {
-      const height = Math.max(selectedSlot ? 80 : 40, target.height || singleH);
+      const nextWidth = singleW * 2;
+      const nextHeight = singleH;
+      const rotation = target.rotation || 0;
+      const currentHeight = target.height || target.fontSize * 1.6 || nextHeight;
+      const center = getRotatedGeometry(
+        target.x || 0,
+        target.y || 0,
+        target.width || nextWidth,
+        currentHeight,
+        rotation
+      );
+      const rad = (rotation * Math.PI) / 180;
+
       return {
         ...target,
-        width: singleW * 2,
-        height,
+        x: center.centerX - (nextWidth / 2) * Math.cos(rad) + (nextHeight / 2) * Math.sin(rad),
+        y: center.centerY - (nextWidth / 2) * Math.sin(rad) - (nextHeight / 2) * Math.cos(rad),
+        width: nextWidth,
+        height: nextHeight,
       };
     });
   };
 
   const rotateSelectedBox90 = () => {
-    updateSelectedBox((target) => ({
-      ...target,
-      rotation: normalizeRotation((target.rotation || 0) + 90),
-    }));
+    updateSelectedBox((target) => {
+      const width = target.width || 240;
+      const height = target.height || target.fontSize * 1.6 || 240;
+      const currentRotation = target.rotation || 0;
+      const nextRotation = normalizeRotation(currentRotation + 90);
+      const center = getRotatedGeometry(target.x || 0, target.y || 0, width, height, currentRotation);
+      const rad = (nextRotation * Math.PI) / 180;
+
+      return {
+        ...target,
+        x: center.centerX - (width / 2) * Math.cos(rad) + (height / 2) * Math.sin(rad),
+        y: center.centerY - (width / 2) * Math.sin(rad) - (height / 2) * Math.cos(rad),
+        rotation: nextRotation,
+      };
+    });
   };
 
   const clearSelectedSlotImage = () => {
@@ -3225,6 +3250,10 @@ export default function App() {
     onFit45: () => setSelectedBoxAspect(4, 5),
     onSpanTwoSlides: spanSelectedBoxAcrossTwoSlides,
     onRotate90: rotateSelectedBox90,
+    onUndo: undo,
+    onRedo: redo,
+    canUndo: historyPast.length > 0,
+    canRedo: historyFuture.length > 0,
     onBringForward: selectedSlot ? bringForwardSlot : bringForward,
     onSendBackward: selectedSlot ? sendBackwardSlot : sendBackward,
     onDuplicate: duplicateSelected,
