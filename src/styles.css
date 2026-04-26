@@ -311,6 +311,10 @@ button.danger {
   pointer-events: none;
 }
 
+.mobile-canvas-scrollbar {
+  display: none;
+}
+
 .stage-pan-layer {
   position: absolute;
   left: 16px;
@@ -386,6 +390,10 @@ button.danger {
 
 .preview-head {
   padding: 16px 18px 8px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .preview-head h2 {
@@ -395,6 +403,15 @@ button.danger {
 .preview-head p {
   margin: 0;
   color: var(--muted);
+}
+
+.preview-head button {
+  flex: 0 0 auto;
+  padding: 9px 12px;
+}
+
+.preview-panel.collapsed {
+  grid-template-rows: auto;
 }
 
 .preview-grid {
@@ -421,7 +438,7 @@ button.danger {
   display: block;
   background: #fff;
   aspect-ratio: 4 / 5;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .preview-actions {
@@ -630,6 +647,28 @@ button.danger {
     top: 14px;
     font-size: 12px;
     padding: 7px 10px;
+  }
+
+  .mobile-canvas-scrollbar {
+    display: block;
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: 14px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    z-index: 36;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .mobile-canvas-scrollbar__thumb {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: inherit;
+    background: rgba(125, 178, 255, 0.9);
   }
 
   .stage-pan-layer {
@@ -1395,10 +1434,58 @@ button.danger {
     grid-template-rows: auto minmax(420px, 52vh) minmax(180px, 240px) auto !important;
   }
 
-  .preview-panel,
-  .preview-card,
-  .preview-section {
-    max-height: 240px;
+  .preview-grid {
+    min-height: 0;
+    overflow: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-shell {
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .sidebar.left,
+  .sidebar.right {
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+  }
+
+  .main {
+    height: calc(100vh - 32px);
+    min-height: 0;
+    overflow: auto;
+  }
+
+  .canvas-panel {
+    flex: 1 0 min(620px, calc(100vh - 180px));
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    min-height: 0;
+  }
+
+  .preview-panel {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .preview-panel.collapsed {
+    flex: 0 0 auto;
+    flex-basis: auto;
+  }
+
+  .bottom-asset-tray--inline {
+    flex: 0 0 auto;
+  }
+
+  .sidebar.right .preview-panel {
+    flex: 0 0 auto;
+    max-height: none;
+  }
+
+  .sidebar.right .preview-grid {
+    grid-template-columns: 1fr;
+    max-height: 56vh;
     overflow: auto;
   }
 }

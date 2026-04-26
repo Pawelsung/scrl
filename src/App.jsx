@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Stage,
   Layer,
@@ -381,35 +381,16 @@ function DraggableImage({
   centeredScaling = false,
   onInteractionChange,
   pushHistory,
+  registerSelectableNode,
 }) {
   const image = useImage(item.src);
   const shapeRef = useRef(null);
-  const trRef = useRef(null);
-  const rafRef = useRef(null);
-  const pendingRef = useRef(null);
 
   useEffect(() => {
-    if (editing && isSelected && trRef.current && shapeRef.current) {
-      trRef.current.nodes([shapeRef.current]);
-      trRef.current.getLayer()?.batchDraw();
-    }
-  }, [isSelected, editing, keepRatioOnTransform, centeredScaling]);
-
-  useEffect(() => {
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
-
-  const scheduleChange = (next) => {
-    pendingRef.current = next;
-    if (rafRef.current) return;
-
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = null;
-      if (pendingRef.current) onChange(pendingRef.current);
-    });
-  };
+    if (!shapeRef.current) return undefined;
+    registerSelectableNode?.("element", item.id, shapeRef.current);
+    return () => registerSelectableNode?.("element", item.id, null);
+  }, [item.id, registerSelectableNode]);
 
   return (
     <>
@@ -462,15 +443,6 @@ function DraggableImage({
                 );
 
                 node.position(nextPos);
-
-                scheduleChange({
-                  ...item,
-                  x: nextPos.x,
-                  y: nextPos.y,
-                  rotation: normalizeRotation(node.rotation()),
-                  snapV: snapped.vertical,
-                  snapH: snapped.horizontal,
-                });
               }
             : undefined
         }
@@ -519,35 +491,6 @@ function DraggableImage({
             : undefined
         }
       />
-      {editing && isSelected && (
-        <Transformer
-          ref={trRef}
-          rotateEnabled
-          keepRatio={keepRatioOnTransform}
-          centeredScaling={centeredScaling}
-          shiftBehavior="default"
-          rotationSnaps={ROTATION_SNAPS}
-          rotationSnapTolerance={6}
-          anchorSize={transformerAnchorSize}
-          borderStroke="#7db2ff"
-          anchorStroke="#7db2ff"
-          anchorFill="#0b0f17"
-          enabledAnchors={[
-            "top-left",
-            "top-center",
-            "top-right",
-            "middle-left",
-            "middle-right",
-            "bottom-left",
-            "bottom-center",
-            "bottom-right",
-          ]}
-          boundBoxFunc={(oldBox, newBox) => {
-            if (newBox.width < 40 || newBox.height < 40) return oldBox;
-            return newBox;
-          }}
-        />
-      )}
     </>
   );
 }
@@ -564,33 +507,15 @@ function DraggableText({
   editing = true,
   onInteractionChange,
   pushHistory,
+  registerSelectableNode,
 }) {
   const textRef = useRef(null);
-  const trRef = useRef(null);
-  const rafRef = useRef(null);
-  const pendingRef = useRef(null);
 
   useEffect(() => {
-    if (editing && isSelected && trRef.current && textRef.current) {
-      trRef.current.nodes([textRef.current]);
-      trRef.current.getLayer()?.batchDraw();
-    }
-  }, [isSelected, editing]);
-
-  useEffect(() => {
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
-
-  const scheduleChange = (next) => {
-    pendingRef.current = next;
-    if (rafRef.current) return;
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = null;
-      if (pendingRef.current) onChange(pendingRef.current);
-    });
-  };
+    if (!textRef.current) return undefined;
+    registerSelectableNode?.("element", item.id, textRef.current);
+    return () => registerSelectableNode?.("element", item.id, null);
+  }, [item.id, registerSelectableNode]);
 
   return (
     <>
@@ -653,15 +578,6 @@ function DraggableText({
                 );
 
                 node.position(nextPos);
-
-                scheduleChange({
-                  ...item,
-                  x: nextPos.x,
-                  y: nextPos.y,
-                  rotation: normalizeRotation(node.rotation()),
-                  snapV: snapped.vertical,
-                  snapH: snapped.horizontal,
-                });
               }
             : undefined
         }
@@ -707,23 +623,6 @@ function DraggableText({
             : undefined
         }
       />
-      {editing && isSelected && (
-        <Transformer
-          ref={trRef}
-          rotateEnabled
-          rotationSnaps={ROTATION_SNAPS}
-          rotationSnapTolerance={6}
-          anchorSize={transformerAnchorSize}
-          borderStroke="#7db2ff"
-          anchorStroke="#7db2ff"
-          anchorFill="#0b0f17"
-          enabledAnchors={["middle-left", "middle-right"]}
-          boundBoxFunc={(oldBox, newBox) => {
-            if (newBox.width < 120) return oldBox;
-            return newBox;
-          }}
-        />
-      )}
     </>
   );
 }
@@ -741,33 +640,15 @@ function StickerShape({
   centeredScaling = false,
   onInteractionChange,
   pushHistory,
+  registerSelectableNode,
 }) {
   const groupRef = useRef(null);
-  const trRef = useRef(null);
-  const rafRef = useRef(null);
-  const pendingRef = useRef(null);
 
   useEffect(() => {
-    if (editing && isSelected && trRef.current && groupRef.current) {
-      trRef.current.nodes([groupRef.current]);
-      trRef.current.getLayer()?.batchDraw();
-    }
-  }, [isSelected, editing, centeredScaling]);
-
-  useEffect(() => {
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
-
-  const scheduleChange = (next) => {
-    pendingRef.current = next;
-    if (rafRef.current) return;
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = null;
-      if (pendingRef.current) onChange(pendingRef.current);
-    });
-  };
+    if (!groupRef.current) return undefined;
+    registerSelectableNode?.("element", item.id, groupRef.current);
+    return () => registerSelectableNode?.("element", item.id, null);
+  }, [item.id, registerSelectableNode]);
 
   return (
     <>
@@ -811,15 +692,6 @@ function StickerShape({
                 );
 
                 node.position(nextPos);
-
-                scheduleChange({
-                  ...item,
-                  x: nextPos.x,
-                  y: nextPos.y,
-                  rotation: normalizeRotation(node.rotation()),
-                  snapV: snapped.vertical,
-                  snapH: snapped.horizontal,
-                });
               }
             : undefined
         }
@@ -896,22 +768,66 @@ function StickerShape({
             strokeWidth={1}
           />
         )}
+        {item.stickerType === "heart" && (
+          <Line
+            points={[
+              item.width * 0.5, item.height,
+              item.width * 0.12, item.height * 0.58,
+              item.width * 0.04, item.height * 0.28,
+              item.width * 0.24, item.height * 0.08,
+              item.width * 0.5, item.height * 0.24,
+              item.width * 0.76, item.height * 0.08,
+              item.width * 0.96, item.height * 0.28,
+              item.width * 0.88, item.height * 0.58,
+            ]}
+            closed
+            fill={item.fill || "#ff7a90"}
+            stroke={hexToRgba("#ffffff", 0.35)}
+            strokeWidth={1}
+          />
+        )}
+        {item.stickerType === "diamond" && (
+          <Line
+            points={[
+              item.width * 0.5, 0,
+              item.width, item.height * 0.5,
+              item.width * 0.5, item.height,
+              0, item.height * 0.5,
+            ]}
+            closed
+            fill={item.fill || "#9ad8ff"}
+            stroke={hexToRgba("#ffffff", 0.35)}
+            strokeWidth={1}
+          />
+        )}
+        {item.stickerType === "triangle" && (
+          <Line
+            points={[item.width * 0.5, 0, item.width, item.height, 0, item.height]}
+            closed
+            fill={item.fill || "#b7f07a"}
+            stroke={hexToRgba("#ffffff", 0.35)}
+            strokeWidth={1}
+          />
+        )}
+        {item.stickerType === "spark" && (
+          <Line
+            points={[
+              item.width * 0.5, 0,
+              item.width * 0.62, item.height * 0.38,
+              item.width, item.height * 0.5,
+              item.width * 0.62, item.height * 0.62,
+              item.width * 0.5, item.height,
+              item.width * 0.38, item.height * 0.62,
+              0, item.height * 0.5,
+              item.width * 0.38, item.height * 0.38,
+            ]}
+            closed
+            fill={item.fill || "#ffffff"}
+            stroke={hexToRgba("#ffffff", 0.35)}
+            strokeWidth={1}
+          />
+        )}
       </Group>
-      {editing && isSelected && (
-        <Transformer
-          ref={trRef}
-          rotateEnabled
-          keepRatio={false}
-          centeredScaling={centeredScaling}
-          rotationSnaps={ROTATION_SNAPS}
-          rotationSnapTolerance={6}
-          anchorSize={transformerAnchorSize}
-          borderStroke="#7db2ff"
-          anchorStroke="#7db2ff"
-          anchorFill="#0b0f17"
-          enabledAnchors={["top-left", "top-right", "bottom-left", "bottom-right"]}
-        />
-      )}
     </>
   );
 }
@@ -928,34 +844,22 @@ function TemplateSlot({
   editing = true,
   onInteractionChange,
   pushHistory,
+  showContent = true,
+  showFrame = true,
+  showPlaceholder = true,
+  showTransformer = true,
+  showHitArea = true,
+  interactive = true,
+  registerSelectableNode,
 }) {
   const groupRef = useRef(null);
-  const trRef = useRef(null);
   const image = useImage(slot.imageSrc);
-  const rafRef = useRef(null);
-  const pendingRef = useRef(null);
 
   useEffect(() => {
-    if (editing && isSelected && trRef.current && groupRef.current) {
-      trRef.current.nodes([groupRef.current]);
-      trRef.current.getLayer()?.batchDraw();
-    }
-  }, [editing, isSelected]);
-
-  useEffect(() => {
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
-
-  const scheduleChange = (next) => {
-    pendingRef.current = next;
-    if (rafRef.current) return;
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = null;
-      if (pendingRef.current) onChange(pendingRef.current);
-    });
-  };
+    if (!groupRef.current) return undefined;
+    registerSelectableNode?.("slot", slot.id, groupRef.current);
+    return () => registerSelectableNode?.("slot", slot.id, null);
+  }, [slot.id, registerSelectableNode]);
 
   return (
     <>
@@ -964,15 +868,15 @@ function TemplateSlot({
         x={slot.x}
         y={slot.y}
         rotation={slot.rotation || 0}
-        draggable={editing}
-        onClick={editing ? onSelect : undefined}
-        onTap={editing ? onSelect : undefined}
+        draggable={editing && interactive}
+        onClick={editing && interactive ? onSelect : undefined}
+        onTap={editing && interactive ? onSelect : undefined}
         onDragStart={() => {
           pushHistory?.();
           onInteractionChange?.(true);
         }}
         onDragMove={
-          editing
+          editing && interactive
             ? (e) => {
                 const node = e.target;
 
@@ -998,20 +902,11 @@ function TemplateSlot({
                 );
 
                 node.position(nextPos);
-
-                scheduleChange({
-                  ...slot,
-                  x: nextPos.x,
-                  y: nextPos.y,
-                  rotation: normalizeRotation(node.rotation()),
-                  snapV: snapped.vertical,
-                  snapH: snapped.horizontal,
-                });
               }
             : undefined
         }
         onDragEnd={
-          editing
+          editing && interactive
             ? (e) => {
                 const node = e.target;
                 onInteractionChange?.(false);
@@ -1031,7 +926,7 @@ function TemplateSlot({
           onInteractionChange?.(true);
         }}
         onTransformEnd={
-          editing
+          editing && interactive
             ? () => {
                 const node = groupRef.current;
                 onInteractionChange?.(false);
@@ -1050,43 +945,47 @@ function TemplateSlot({
             : undefined
         }
       >
-        <Rect
-          width={slot.width}
-          height={slot.height}
-          cornerRadius={slot.radius || 0}
-          fill="rgba(255,255,255,0.001)"
-          listening={editing}
-        />
-
-        <Group
-          clipFunc={(ctx) => {
-            roundedRectPath(ctx, slot.width, slot.height, slot.radius || 0);
-          }}
-        >
+        {showHitArea && (
           <Rect
             width={slot.width}
             height={slot.height}
-            fill={slot.fill || "rgba(255,255,255,0.06)"}
             cornerRadius={slot.radius || 0}
+            fill="rgba(255,255,255,0.001)"
+            listening={editing && interactive}
           />
+        )}
 
-          {image && (
-            <KonvaImage
-              image={image}
-              {...getCoverPlacement(
-                image.width,
-                image.height,
-                slot.width,
-                slot.height,
-                slot.imageZoom || 1,
-                slot.imageOffsetX || 0,
-                slot.imageOffsetY || 0
-              )}
+        {showContent && (
+          <Group
+            clipFunc={(ctx) => {
+              roundedRectPath(ctx, slot.width, slot.height, slot.radius || 0);
+            }}
+          >
+            <Rect
+              width={slot.width}
+              height={slot.height}
+              fill={slot.fill || "rgba(255,255,255,0.06)"}
+              cornerRadius={slot.radius || 0}
             />
-          )}
-        </Group>
 
-        {!slot.imageSrc && (
+            {image && (
+              <KonvaImage
+                image={image}
+                {...getCoverPlacement(
+                  image.width,
+                  image.height,
+                  slot.width,
+                  slot.height,
+                  slot.imageZoom || 1,
+                  slot.imageOffsetX || 0,
+                  slot.imageOffsetY || 0
+                )}
+              />
+            )}
+          </Group>
+        )}
+
+        {showPlaceholder && !slot.imageSrc && (
           <>
             <Rect
               x={16}
@@ -1111,43 +1010,87 @@ function TemplateSlot({
           </>
         )}
 
-        <Rect
-          width={slot.width}
-          height={slot.height}
-          cornerRadius={slot.radius || 0}
-          stroke={isSelected ? "#7db2ff" : slot.stroke || "#ffffff"}
-          strokeWidth={isSelected ? Math.max(3, (slot.strokeWidth || 4) + 1) : slot.strokeWidth || 4}
-        />
+        {showFrame && (
+          <Rect
+            width={slot.width}
+            height={slot.height}
+            cornerRadius={slot.radius || 0}
+            stroke={isSelected ? "#7db2ff" : slot.stroke || "#ffffff"}
+            strokeWidth={isSelected ? Math.max(3, (slot.strokeWidth || 4) + 1) : slot.strokeWidth || 4}
+          />
+        )}
       </Group>
 
-      {editing && isSelected && (
-        <Transformer
-          ref={trRef}
-          rotateEnabled
-          keepRatio={false}
-          rotationSnaps={ROTATION_SNAPS}
-          rotationSnapTolerance={6}
-          anchorSize={transformerAnchorSize}
-          borderStroke="#7db2ff"
-          anchorStroke="#7db2ff"
-          anchorFill="#0b0f17"
-          enabledAnchors={[
-            "top-left",
-            "top-center",
-            "top-right",
-            "middle-left",
-            "middle-right",
-            "bottom-left",
-            "bottom-center",
-            "bottom-right",
-          ]}
-          boundBoxFunc={(oldBox, newBox) => {
-            if (newBox.width < 80 || newBox.height < 80) return oldBox;
-            return newBox;
-          }}
-        />
-      )}
     </>
+  );
+}
+
+function SelectionTransformer({
+  selectedNode,
+  selectedType,
+  editing,
+  transformerAnchorSize,
+  keepRatioOnTransform = false,
+  centeredScaling = false,
+}) {
+  const trRef = useRef(null);
+
+  useEffect(() => {
+    if (!trRef.current) return;
+
+    if (editing && selectedNode) {
+      trRef.current.nodes([selectedNode]);
+      trRef.current.getLayer()?.batchDraw();
+      return;
+    }
+
+    trRef.current.nodes([]);
+    trRef.current.getLayer()?.batchDraw();
+  }, [editing, selectedNode, selectedType, keepRatioOnTransform, centeredScaling]);
+
+  if (!editing || !selectedNode) return null;
+
+  const isText = selectedType === "text";
+  const isSticker = selectedType === "sticker";
+  const isSlot = selectedType === "slot";
+  const isImage = selectedType === "image";
+
+  const enabledAnchors = isText
+    ? ["middle-left", "middle-right"]
+    : isSticker
+      ? ["top-left", "top-right", "bottom-left", "bottom-right"]
+      : [
+          "top-left",
+          "top-center",
+          "top-right",
+          "middle-left",
+          "middle-right",
+          "bottom-left",
+          "bottom-center",
+          "bottom-right",
+        ];
+
+  return (
+    <Transformer
+      ref={trRef}
+      rotateEnabled
+      keepRatio={isImage ? keepRatioOnTransform : false}
+      centeredScaling={isImage || isSticker ? centeredScaling : false}
+      shiftBehavior="default"
+      rotationSnaps={ROTATION_SNAPS}
+      rotationSnapTolerance={6}
+      anchorSize={transformerAnchorSize}
+      borderStroke="#7db2ff"
+      anchorStroke="#7db2ff"
+      anchorFill="#0b0f17"
+      enabledAnchors={enabledAnchors}
+      boundBoxFunc={(oldBox, newBox) => {
+        if (isText && newBox.width < 120) return oldBox;
+        if (isSlot && (newBox.width < 80 || newBox.height < 80)) return oldBox;
+        if (!isText && !isSlot && (newBox.width < 40 || newBox.height < 40)) return oldBox;
+        return newBox;
+      }}
+    />
   );
 }
 
@@ -1486,6 +1429,41 @@ function DesktopInspectorPanel({
   );
 }
 
+function normalizeLayerOrder(order, elements, slots) {
+  const elementIds = new Set(elements.map((item) => item.id));
+  const slotIds = new Set(slots.map((slot) => slot.id));
+  const seen = new Set();
+  const normalized = [];
+
+  for (const entry of Array.isArray(order) ? order : []) {
+    if (!entry || !entry.id || !entry.kind) continue;
+    const key = `${entry.kind}:${entry.id}`;
+    if (seen.has(key)) continue;
+    if (entry.kind === "element" && !elementIds.has(entry.id)) continue;
+    if (entry.kind === "slot" && !slotIds.has(entry.id)) continue;
+    seen.add(key);
+    normalized.push(entry);
+  }
+
+  for (const slot of slots) {
+    const key = `slot:${slot.id}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      normalized.push({ kind: "slot", id: slot.id });
+    }
+  }
+
+  for (const item of elements) {
+    const key = `element:${item.id}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      normalized.push({ kind: "element", id: item.id });
+    }
+  }
+
+  return normalized;
+}
+
 
 
 
@@ -1498,6 +1476,7 @@ export default function App() {
   const [images, setImages] = useState([]);
   const [elements, setElements] = useState([]);
   const [templateSlots, setTemplateSlots] = useState([]);
+  const [layerOrder, setLayerOrder] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedSlotId, setSelectedSlotId] = useState(null);
   const [previews, setPreviews] = useState([]);
@@ -1510,6 +1489,10 @@ export default function App() {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isExporting, setIsExporting] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
+  const isInteractingRef = useRef(false);
+  const [previewExpandSignal, setPreviewExpandSignal] = useState(0);
+  const selectableNodesRef = useRef(new Map());
+  const [selectableNodeRevision, setSelectableNodeRevision] = useState(0);
 
   const [historyPast, setHistoryPast] = useState([]);
   const [historyFuture, setHistoryFuture] = useState([]);
@@ -1524,9 +1507,12 @@ export default function App() {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const containerRef = useRef(null);
+  const panLayerRef = useRef(null);
+  const mobileScrollbarThumbRef = useRef(null);
   const stageRef = useRef(null);
   const fileRef = useRef(null);
   const importRef = useRef(null);
+  const panRef = useRef(pan);
 
   const gestureRef = useRef({
     isPanning: false,
@@ -1541,6 +1527,8 @@ export default function App() {
     pinchStartPan: { x: 0, y: 0 },
     pinchCenter: { x: 0, y: 0 },
     pinchStartObject: null,
+    pinchLastRatio: 1,
+    pinchLastAngleDelta: 0,
     pinchTargetType: null,
     pinchTargetId: null,
     pinchLocked: false,
@@ -1553,6 +1541,32 @@ export default function App() {
 
   const selectedItem = elements.find((el) => el.id === selectedId) || null;
   const selectedSlot = templateSlots.find((slot) => slot.id === selectedSlotId) || null;
+  const registerSelectableNode = useCallback((kind, id, node) => {
+    const key = `${kind}:${id}`;
+    if (node) {
+      selectableNodesRef.current.set(key, node);
+    } else {
+      selectableNodesRef.current.delete(key);
+    }
+    setSelectableNodeRevision((value) => value + 1);
+  }, []);
+  const setObjectInteracting = useCallback((value) => {
+    isInteractingRef.current = value;
+  }, []);
+  const setViewportInteracting = useCallback((value) => {
+    isInteractingRef.current = value;
+    setIsInteracting(value);
+  }, []);
+  const selectedNode = useMemo(() => {
+    if (selectedSlot) return selectableNodesRef.current.get(`slot:${selectedSlot.id}`) || null;
+    if (selectedItem) return selectableNodesRef.current.get(`element:${selectedItem.id}`) || null;
+    return null;
+  }, [selectedItem, selectedSlot, selectableNodeRevision]);
+  const selectedNodeType = selectedSlot ? "slot" : selectedItem?.type || null;
+  const visibleLayerOrder = useMemo(
+    () => normalizeLayerOrder(layerOrder, elements, templateSlots),
+    [layerOrder, elements, templateSlots]
+  );
 
   const captureSnapshot = () => ({
     slides,
@@ -1563,6 +1577,7 @@ export default function App() {
     images,
     elements,
     templateSlots,
+    layerOrder,
     templateId,
   });
 
@@ -1573,8 +1588,9 @@ export default function App() {
     setBgPrimary(snap.bgPrimary);
     setBgSecondary(snap.bgSecondary);
     setImages(snap.images);
-    setElements(snap.elements);
-    setTemplateSlots(snap.templateSlots);
+    setElements(snap.elements || []);
+    setTemplateSlots(snap.templateSlots || []);
+    setLayerOrder(normalizeLayerOrder(snap.layerOrder, snap.elements || [], snap.templateSlots || []));
     setTemplateId(snap.templateId);
     setSelectedId(null);
     setSelectedSlotId(null);
@@ -1635,7 +1651,7 @@ export default function App() {
 
   useEffect(() => {
     if (!hasHydratedDraftRef.current) return;
-    if (isInteracting) return;
+    if (isInteractingRef.current) return;
 
     if (autosaveTimerRef.current) {
       clearTimeout(autosaveTimerRef.current);
@@ -1667,6 +1683,7 @@ export default function App() {
     images,
     elements,
     templateSlots,
+    layerOrder,
     templateId,
     isInteracting,
     isMobile,
@@ -1692,6 +1709,7 @@ export default function App() {
     setImages([]);
     setElements([]);
     setTemplateSlots([]);
+    setLayerOrder([]);
     setTemplateId("blank");
     setSelectedId(null);
     setSelectedSlotId(null);
@@ -1809,12 +1827,54 @@ export default function App() {
 
   const fitScale = useMemo(() => {
     const pad = isMobile ? 16 : 32;
+    const fitWidth = isMobile ? singleW * Math.min(slides, 2) : canvasW;
     const usableW = Math.max(260, containerSize.w - pad);
     const usableH = Math.max(220, containerSize.h - pad);
-    return Math.min(usableW / canvasW, usableH / canvasH, 1);
-  }, [containerSize, canvasW, canvasH, isMobile]);
+    return Math.min(usableW / fitWidth, usableH / canvasH, 1);
+  }, [containerSize, canvasW, canvasH, isMobile, singleW, slides]);
 
   const displayScale = fitScale * userZoom;
+  const mobileVisibleSlideCount = Math.min(slides, 2);
+  const mobileScrollProgress = useMemo(() => {
+    if (!isMobile || slides <= mobileVisibleSlideCount) return 0;
+    const scaledW = canvasW * displayScale;
+    const viewportW = containerSize.w;
+    const pad = 10;
+    const minX = viewportW - scaledW - pad;
+    const maxX = pad;
+    const range = maxX - minX;
+    if (range <= 0) return 0;
+    return clamp((maxX - pan.x) / range, 0, 1);
+  }, [canvasW, containerSize.w, displayScale, isMobile, mobileVisibleSlideCount, pan.x, slides]);
+
+  useEffect(() => {
+    panRef.current = pan;
+  }, [pan]);
+
+  const updateMobileScrollbarPreview = useCallback((nextPan) => {
+    if (!mobileScrollbarThumbRef.current || !isMobile || slides <= mobileVisibleSlideCount) return;
+    const scaledW = canvasW * displayScale;
+    const viewportW = containerSize.w;
+    const pad = 10;
+    const minX = viewportW - scaledW - pad;
+    const maxX = pad;
+    const range = maxX - minX;
+    const progress = range <= 0 ? 0 : clamp((maxX - nextPan.x) / range, 0, 1);
+    const thumbWidth = Math.max(28, (mobileVisibleSlideCount / slides) * 100);
+    mobileScrollbarThumbRef.current.style.left = `${(100 - thumbWidth) * progress}%`;
+  }, [canvasW, containerSize.w, displayScale, isMobile, mobileVisibleSlideCount, slides]);
+
+  const applyPanPreview = useCallback((nextPan) => {
+    panRef.current = nextPan;
+    if (panLayerRef.current) {
+      panLayerRef.current.style.transform = `translate(${nextPan.x}px, ${nextPan.y}px)`;
+    }
+    updateMobileScrollbarPreview(nextPan);
+  }, [updateMobileScrollbarPreview]);
+
+  const commitPanPreview = useCallback(() => {
+    setPan(panRef.current);
+  }, []);
 
   const clampPan = (nextX, nextY, zoom = userZoom) => {
     const scaledW = canvasW * fitScale * zoom;
@@ -1862,6 +1922,7 @@ export default function App() {
       isTemplateManaged: false,
     };
     setElements((prev) => [...prev, clone]);
+    setLayerOrder((prev) => [...normalizeLayerOrder(prev, elements, templateSlots), { kind: "element", id: clone.id }]);
     setSelectedId(clone.id);
     setSelectedSlotId(null);
   };
@@ -1956,18 +2017,11 @@ export default function App() {
     const targetId = gestureRef.current.pinchTargetId;
     if (!start || !targetId) return;
 
-    setTemplateSlots((prev) =>
-      prev.map((slot) =>
-        slot.id === targetId
-          ? {
-              ...slot,
-              width: Math.max(80, start.width * ratio),
-              height: Math.max(80, start.height * ratio),
-              rotation: normalizeRotation(start.rotation + angleDelta),
-            }
-          : slot
-      )
-    );
+    const node = selectableNodesRef.current.get(`slot:${targetId}`);
+    if (!node) return;
+    node.scale({ x: ratio, y: ratio });
+    node.rotation(normalizeRotation(start.rotation + angleDelta));
+    node.getLayer()?.batchDraw();
   };
 
   const applyPinchToSelectedObject = (ratio, angleDelta) => {
@@ -1975,12 +2029,11 @@ export default function App() {
       const start = gestureRef.current.pinchStartObject;
       if (!start) return;
 
-      updateElement({
-        ...selectedItem,
-        width: Math.max(40, start.width * ratio),
-        height: Math.max(40, start.height * ratio),
-        rotation: normalizeRotation(start.rotation + angleDelta),
-      });
+      const node = selectableNodesRef.current.get(`element:${selectedItem.id}`);
+      if (!node) return;
+      node.scale({ x: ratio, y: ratio });
+      node.rotation(normalizeRotation(start.rotation + angleDelta));
+      node.getLayer()?.batchDraw();
     }
   };
 
@@ -2006,7 +2059,7 @@ export default function App() {
             : slot
         )
       );
-      if (isMobile) setMobilePanel("inspector");
+      if (isMobile) setMobileDrawerOpen(false);
       return;
     }
 
@@ -2032,9 +2085,10 @@ export default function App() {
       isTemplateManaged: false,
     };
     setElements((prev) => [...prev, item]);
+    setLayerOrder((prev) => [...normalizeLayerOrder(prev, elements, templateSlots), { kind: "element", id: item.id }]);
     setSelectedId(item.id);
     setSelectedSlotId(null);
-    if (isMobile) setMobilePanel("inspector");
+    if (isMobile) setMobileDrawerOpen(false);
   };
 
   const onUploadFiles = async (e) => {
@@ -2053,15 +2107,17 @@ export default function App() {
                   src: reader.result,
                   width: img.width,
                   height: img.height,
+                  mediaType: "image",
                 });
               };
+              img.onerror = () => resolve(null);
               img.src = reader.result;
             };
             reader.readAsDataURL(file);
           })
       )
     );
-    setImages((prev) => [...next, ...prev]);
+    setImages((prev) => [...next.filter(Boolean), ...prev]);
     e.target.value = "";
   };
 
@@ -2085,10 +2141,11 @@ export default function App() {
     };
     
     setElements((prev) => [...prev, item]);
+    setLayerOrder((prev) => [...normalizeLayerOrder(prev, elements, templateSlots), { kind: "element", id: item.id }]);
     setSelectedId(item.id);
     setSelectedSlotId(null);
 
-    if (isMobile) setMobilePanel("inspector");
+    if (isMobile) setMobileDrawerOpen(false);
   };
 
   const addSticker = (type) => {
@@ -2110,11 +2167,16 @@ export default function App() {
     if (type === "tape") item = { ...base, width: 180, height: 54 };
     if (type === "circle") item = { ...base, width: 90, height: 90 };
     if (type === "star") item = { ...base, width: 110, height: 110 };
+    if (type === "heart") item = { ...base, width: 110, height: 100 };
+    if (type === "diamond") item = { ...base, width: 100, height: 100 };
+    if (type === "triangle") item = { ...base, width: 110, height: 100 };
+    if (type === "spark") item = { ...base, width: 110, height: 110 };
 
     setElements((prev) => [...prev, item]);
+    setLayerOrder((prev) => [...normalizeLayerOrder(prev, elements, templateSlots), { kind: "element", id: item.id }]);
     setSelectedId(item.id);
     setSelectedSlotId(null);
-    if (isMobile) setMobilePanel("inspector");
+    if (isMobile) setMobileDrawerOpen(false);
   };
 
   const removeSelected = () => {
@@ -2122,22 +2184,28 @@ export default function App() {
 
     if (selectedSlotId) {
       setTemplateSlots((prev) => prev.filter((slot) => slot.id !== selectedSlotId));
+      setLayerOrder((prev) =>
+        prev.filter((entry) => !(entry.kind === "slot" && entry.id === selectedSlotId))
+      );
       setSelectedSlotId(null);
       return;
     }
 
     if (!selectedId) return;
     setElements((prev) => prev.filter((el) => el.id !== selectedId));
+    setLayerOrder((prev) =>
+      prev.filter((entry) => !(entry.kind === "element" && entry.id === selectedId))
+    );
     setSelectedId(null);
   };
 
   const bringForward = () => {
     if (!selectedId) return;
     pushHistory();
-    setElements((prev) => {
-      const idx = prev.findIndex((el) => el.id === selectedId);
-      if (idx < 0 || idx === prev.length - 1) return prev;
-      const arr = [...prev];
+    setLayerOrder(() => {
+      const arr = [...visibleLayerOrder];
+      const idx = arr.findIndex((entry) => entry.kind === "element" && entry.id === selectedId);
+      if (idx < 0 || idx === arr.length - 1) return arr;
       [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
       return arr;
     });
@@ -2146,10 +2214,10 @@ export default function App() {
   const sendBackward = () => {
     if (!selectedId) return;
     pushHistory();
-    setElements((prev) => {
-      const idx = prev.findIndex((el) => el.id === selectedId);
-      if (idx <= 0) return prev;
-      const arr = [...prev];
+    setLayerOrder(() => {
+      const arr = [...visibleLayerOrder];
+      const idx = arr.findIndex((entry) => entry.kind === "element" && entry.id === selectedId);
+      if (idx <= 0) return arr;
       [arr[idx], arr[idx - 1]] = [arr[idx - 1], arr[idx]];
       return arr;
     });
@@ -2158,10 +2226,10 @@ export default function App() {
   const bringForwardSlot = () => {
     if (!selectedSlotId) return;
     pushHistory();
-    setTemplateSlots((prev) => {
-      const idx = prev.findIndex((slot) => slot.id === selectedSlotId);
-      if (idx < 0 || idx === prev.length - 1) return prev;
-      const arr = [...prev];
+    setLayerOrder(() => {
+      const arr = [...visibleLayerOrder];
+      const idx = arr.findIndex((entry) => entry.kind === "slot" && entry.id === selectedSlotId);
+      if (idx < 0 || idx === arr.length - 1) return arr;
       [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
       return arr;
     });
@@ -2170,10 +2238,10 @@ export default function App() {
   const sendBackwardSlot = () => {
     if (!selectedSlotId) return;
     pushHistory();
-    setTemplateSlots((prev) => {
-      const idx = prev.findIndex((slot) => slot.id === selectedSlotId);
-      if (idx <= 0) return prev;
-      const arr = [...prev];
+    setLayerOrder(() => {
+      const arr = [...visibleLayerOrder];
+      const idx = arr.findIndex((entry) => entry.kind === "slot" && entry.id === selectedSlotId);
+      if (idx <= 0) return arr;
       [arr[idx], arr[idx - 1]] = [arr[idx - 1], arr[idx]];
       return arr;
     });
@@ -2189,6 +2257,13 @@ export default function App() {
     if (id === "blank") {
       setTemplateSlots([]);
       setElements((prev) => prev.filter((el) => !el.isTemplateManaged));
+      setLayerOrder((prev) =>
+        normalizeLayerOrder(
+          prev.filter((entry) => entry.kind !== "slot"),
+          elements.filter((el) => !el.isTemplateManaged),
+          []
+        )
+      );
       clearSelection();
       return;
     }
@@ -2457,6 +2532,23 @@ export default function App() {
       ...prev.filter((el) => !el.isTemplateManaged),
       ...nextManagedElements,
     ]);
+    setLayerOrder((prev) => {
+      const remainingElements = elements.filter((el) => !el.isTemplateManaged);
+      const nextElements = [...remainingElements, ...nextManagedElements];
+      const keptOrder = normalizeLayerOrder(prev, remainingElements, []);
+      return [
+        ...keptOrder,
+        ...nextSlots.map((slot) => ({ kind: "slot", id: slot.id })),
+        ...nextManagedElements.map((item) => ({ kind: "element", id: item.id })),
+      ].filter((entry, index, arr) => {
+        const key = `${entry.kind}:${entry.id}`;
+        return arr.findIndex((candidate) => `${candidate.kind}:${candidate.id}` === key) === index;
+      }).filter((entry) =>
+        entry.kind === "slot"
+          ? nextSlots.some((slot) => slot.id === entry.id)
+          : nextElements.some((item) => item.id === entry.id)
+      );
+    });
     clearSelection();
   };
 
@@ -2493,28 +2585,32 @@ export default function App() {
     return list;
   };
 
-  const refreshPreviews = async () => {
+  const refreshPreviews = async ({ reveal = false } = {}) => {
     const data = await exportSlices(isMobile ? 0.32 : 0.45);
     setPreviews(data);
+    if (reveal) setPreviewExpandSignal((value) => value + 1);
   };
 
   useEffect(() => {
-    if (isInteracting) return;
+    if (isMobile) return;
+    if (isInteractingRef.current) return;
 
     const timer = setTimeout(() => {
       refreshPreviews();
-    }, isMobile ? 900 : 500);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [
     elements,
     templateSlots,
+    layerOrder,
     slides,
     ratioKey,
     bgPrimary,
     bgSecondary,
     backgroundMode,
     isInteracting,
+    isMobile,
   ]);
 
   const downloadDataUrl = (dataUrl, filename) => {
@@ -2525,9 +2621,9 @@ export default function App() {
   };
 
   const dataUrlToBlob = async (dataUrl) => {
-  const res = await fetch(dataUrl);
-  return await res.blob();
-};
+    const res = await fetch(dataUrl);
+    return await res.blob();
+  };
 
   const shareDataUrlToIOS = async (dataUrl, filename) => {
     try {
@@ -2551,6 +2647,8 @@ export default function App() {
   };
 
   const downloadAll = async () => {
+    const stage = stageRef.current;
+    if (!stage) return;
     const data = await exportSlices();
     data.forEach((src, idx) => {
       setTimeout(() => {
@@ -2569,6 +2667,7 @@ export default function App() {
       images,
       elements,
       templateSlots,
+      layerOrder,
       templateId,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -2592,6 +2691,7 @@ export default function App() {
         setImages(data.images || []);
         setElements(data.elements || []);
         setTemplateSlots(data.templateSlots || []);
+        setLayerOrder(normalizeLayerOrder(data.layerOrder, data.elements || [], data.templateSlots || []));
         setTemplateId(data.templateId || "blank");
         setSelectedId(null);
         setSelectedSlotId(null);
@@ -2662,7 +2762,7 @@ export default function App() {
 
   const renderBackground = () => {
     if (backgroundMode === "solid") {
-      return <Rect x={0} y={0} width={canvasW} height={canvasH} fill={bgPrimary} cornerRadius={40} />;
+      return <Rect x={0} y={0} width={canvasW} height={canvasH} fill={bgPrimary} cornerRadius={40} listening={false} />;
     }
 
     return (
@@ -2675,6 +2775,7 @@ export default function App() {
         fillLinearGradientEndPoint={{ x: canvasW, y: canvasH }}
         fillLinearGradientColorStops={createGradientStops(bgPrimary, bgSecondary)}
         cornerRadius={40}
+        listening={false}
       />
     );
   };
@@ -2698,6 +2799,14 @@ export default function App() {
     return Math.atan2(b.clientY - a.clientY, b.clientX - a.clientX) * (180 / Math.PI);
   };
 
+  const startViewportPan = (clientX, clientY) => {
+    gestureRef.current.isPanning = true;
+    gestureRef.current.startX = clientX;
+    gestureRef.current.startY = clientY;
+    gestureRef.current.startPanX = panRef.current.x;
+    gestureRef.current.startPanY = panRef.current.y;
+  };
+
   const handleViewportPointerDown = (e) => {
     const target = e.target;
     const isStageWrap = target.classList?.contains("canvas-stage-wrap");
@@ -2706,11 +2815,7 @@ export default function App() {
 
     if (!(isStageWrap || isPanBg || isScaleBox)) return;
 
-    gestureRef.current.isPanning = true;
-    gestureRef.current.startX = e.clientX;
-    gestureRef.current.startY = e.clientY;
-    gestureRef.current.startPanX = pan.x;
-    gestureRef.current.startPanY = pan.y;
+    startViewportPan(e.clientX, e.clientY);
   };
 
   const handleViewportPointerMove = (e) => {
@@ -2722,17 +2827,18 @@ export default function App() {
       gestureRef.current.startPanY + dy,
       userZoom
     );
-    setPan(next);
+    applyPanPreview(next);
   };
 
   const handleViewportPointerUp = () => {
+    if (gestureRef.current.isPanning) commitPanPreview();
     gestureRef.current.isPanning = false;
   };
 
   const handleViewportTouchStart = (e) => {
     if (e.touches.length === 2) {
       e.preventDefault();
-      setIsInteracting(true);
+      setViewportInteracting(true);
       const distance = getDistance(e.touches);
       const midpoint = getMidpoint(e.touches);
       const angle = getAngle(e.touches);
@@ -2740,11 +2846,11 @@ export default function App() {
       gestureRef.current.pinchStartDistance = distance;
       gestureRef.current.pinchStartAngle = angle;
       gestureRef.current.pinchStartZoom = userZoom;
-      gestureRef.current.pinchStartPan = { ...pan };
+      gestureRef.current.pinchStartPan = { ...panRef.current };
       gestureRef.current.pinchCenter = midpoint;
       gestureRef.current.isPanning = false;
       gestureRef.current.pinchLocked = true;
-      setIsInteracting(true);
+      setViewportInteracting(true);
 
       const hasSelectedTarget =
         !!selectedSlot ||
@@ -2802,11 +2908,7 @@ export default function App() {
         return;
       }
 
-      gestureRef.current.isPanning = true;
-      gestureRef.current.startX = e.touches[0].clientX;
-      gestureRef.current.startY = e.touches[0].clientY;
-      gestureRef.current.startPanX = pan.x;
-      gestureRef.current.startPanY = pan.y;
+      startViewportPan(e.touches[0].clientX, e.touches[0].clientY);
     }
   };
 
@@ -2818,6 +2920,8 @@ export default function App() {
       const ratio = distance / gestureRef.current.pinchStartDistance;
       const currentAngle = getAngle(e.touches);
       const angleDelta = getShortestAngleDelta(currentAngle, gestureRef.current.pinchStartAngle);
+      gestureRef.current.pinchLastRatio = ratio;
+      gestureRef.current.pinchLastAngleDelta = angleDelta;
 
       const hasSelectedTarget =
         !!selectedSlot ||
@@ -2869,32 +2973,47 @@ export default function App() {
         gestureRef.current.startPanY + dy,
         userZoom
       );
-      setPan(next);
+      applyPanPreview(next);
     }
   };
 
   const handleViewportTouchEnd = () => {
     if (gestureRef.current.pinchMode === "object") {
+      const start = gestureRef.current.pinchStartObject;
+      const ratio = gestureRef.current.pinchLastRatio || 1;
+      const angleDelta = gestureRef.current.pinchLastAngleDelta || 0;
+
       if (selectedSlot) {
+        const node = selectableNodesRef.current.get(`slot:${selectedSlot.id}`);
+        node?.scale({ x: 1, y: 1 });
         updateSlot({
           ...selectedSlot,
-          rotation: snapRotationAngle(selectedSlot.rotation || 0),
+          width: Math.max(80, (start?.width || selectedSlot.width) * ratio),
+          height: Math.max(80, (start?.height || selectedSlot.height) * ratio),
+          rotation: snapRotationAngle(normalizeRotation((start?.rotation || 0) + angleDelta)),
         });
       } else if (selectedItem && (selectedItem.type === "image" || selectedItem.type === "sticker")) {
+        const node = selectableNodesRef.current.get(`element:${selectedItem.id}`);
+        node?.scale({ x: 1, y: 1 });
         updateElement({
           ...selectedItem,
-          rotation: snapRotationAngle(selectedItem.rotation || 0),
+          width: Math.max(40, (start?.width || selectedItem.width) * ratio),
+          height: Math.max(40, (start?.height || selectedItem.height) * ratio),
+          rotation: snapRotationAngle(normalizeRotation((start?.rotation || 0) + angleDelta)),
         });
       }
     }
 
+    if (gestureRef.current.isPanning) commitPanPreview();
     gestureRef.current.isPanning = false;
     gestureRef.current.pinchMode = "viewport";
     gestureRef.current.pinchStartObject = null;
+    gestureRef.current.pinchLastRatio = 1;
+    gestureRef.current.pinchLastAngleDelta = 0;
     gestureRef.current.pinchTargetType = null;
     gestureRef.current.pinchTargetId = null;
     gestureRef.current.pinchLocked = false;
-    setIsInteracting(false);
+    setViewportInteracting(false);
   };
 
   const transformerAnchorSize = useMemo(() => {
@@ -2988,8 +3107,12 @@ export default function App() {
     })),
     onDownloadOne: (preview, index) =>
       downloadDataUrl(preview.src, `carousel_${String(index + 1).padStart(2, "0")}.png`),
+    onSaveOne: (preview, index) =>
+      shareDataUrlToIOS(preview.src, `carousel_${String(index + 1).padStart(2, "0")}.png`),
     onDownloadAll: downloadAll,
     isBusy: isExporting,
+    defaultCollapsed: !isMobile,
+    expandSignal: previewExpandSignal,
   };
 
   const mobileDrawerProps = {
@@ -3032,7 +3155,7 @@ export default function App() {
                   <button className="ghost" onClick={redo}>下一步</button>
                   <button type="button" className="ghost danger" onClick={removeSelected}>刪除選取</button>
                   <button type="button" className="ghost" onClick={clearSavedDraft}>清除草稿</button>
-                  <button type="button" onClick={refreshPreviews}>更新預覽</button>
+                  <button type="button" onClick={() => refreshPreviews({ reveal: true })}>更新預覽</button>
                 </>
               )}
 
@@ -3044,6 +3167,7 @@ export default function App() {
                   <button type="button" className="ghost danger" onClick={removeSelected}>刪除</button>
                   <button type="button" className="ghost" onClick={clearSavedDraft}>清稿</button>
                   <button onClick={() => {
+                    refreshPreviews({ reveal: true });
                     setMobileTab("preview");
                     setMobileDrawerOpen(true);
                   }}>
@@ -3073,7 +3197,21 @@ export default function App() {
               </div>
             )}
 
+            {isMobile && slides > mobileVisibleSlideCount && (
+              <div className="mobile-canvas-scrollbar" aria-hidden="true">
+                <div
+                  ref={mobileScrollbarThumbRef}
+                  className="mobile-canvas-scrollbar__thumb"
+                  style={{
+                    width: `${Math.max(28, (mobileVisibleSlideCount / slides) * 100)}%`,
+                    left: `${(100 - Math.max(28, (mobileVisibleSlideCount / slides) * 100)) * mobileScrollProgress}%`,
+                  }}
+                />
+              </div>
+            )}
+
             <div
+              ref={panLayerRef}
               className="stage-pan-layer"
               style={{ transform: `translate(${pan.x}px, ${pan.y}px)` }}
             >
@@ -3094,33 +3232,69 @@ export default function App() {
                     ref={stageRef}
                     width={canvasW}
                     height={canvasH}
-                    onMouseDown={(e) => {
-                      if (isInteracting) return;
-                      const clickedOnEmpty = e.target === e.target.getStage();
-                      if (clickedOnEmpty) clearSelection();
-                    }}
-                    onTouchStart={(e) => {
-                      if (isInteracting) return;
-                      const touchCount = e.evt?.touches?.length || 0;
-                      if (touchCount > 1) return;
-                      const clickedOnEmpty = e.target === e.target.getStage();
-                      if (clickedOnEmpty) clearSelection();
-                    }}
+	                    onMouseDown={(e) => {
+	                      if (isInteractingRef.current) return;
+	                      const clickedOnEmpty = e.target === e.target.getStage();
+	                      if (clickedOnEmpty) {
+	                        clearSelection();
+	                        if (isMobile) startViewportPan(e.evt.clientX, e.evt.clientY);
+	                      }
+	                    }}
+	                    onTouchStart={(e) => {
+	                      if (isInteractingRef.current) return;
+	                      const touchCount = e.evt?.touches?.length || 0;
+	                      if (touchCount > 1) return;
+	                      const clickedOnEmpty = e.target === e.target.getStage();
+	                      if (clickedOnEmpty) {
+	                        clearSelection();
+	                        const touch = e.evt.touches?.[0];
+	                        if (isMobile && touch) startViewportPan(touch.clientX, touch.clientY);
+	                      }
+	                    }}
                     onWheel={onWheelScaleSelected}
                   >
                     <Layer>
                       {renderBackground()}
 
-                      {drawable.map((item) => {
+                      {visibleLayerOrder.map((entry) => {
+                        if (entry.kind === "slot") {
+                          const slot = templateSlots.find((candidate) => candidate.id === entry.id);
+                          if (!slot) return null;
+                          return (
+                            <TemplateSlot
+                              key={`slot-${slot.id}`}
+                              slot={slot}
+                              isSelected={slot.id === selectedSlotId}
+                              onSelect={() => {
+                                setSelectedSlotId(slot.id);
+                                setSelectedId(null);
+                              }}
+                              onChange={updateSlot}
+                              snapGuides={snapGuides}
+                              canvasW={canvasW}
+                              canvasH={canvasH}
+                              transformerAnchorSize={transformerAnchorSize}
+                              editing={!isExporting}
+	                              onInteractionChange={setObjectInteracting}
+                              pushHistory={pushHistory}
+                              registerSelectableNode={registerSelectableNode}
+                            />
+                          );
+                        }
+
+                        const item = elements.find((candidate) => candidate.id === entry.id);
+                        if (!item || item.type === "frameRect") return null;
+
                         if (item.type === "image") {
                           return (
                             <DraggableImage
                               key={item.id}
                               item={item}
-                              isSelected={item.id === selectedId}
-                              onSelect={() => {
-                                setSelectedId(item.id);
-                                setSelectedSlotId(null);                              }}
+	                              isSelected={item.id === selectedId}
+	                              onSelect={() => {
+	                                setSelectedId(item.id);
+	                                setSelectedSlotId(null);
+	                              }}
                               onChange={updateElement}
                               snapGuides={snapGuides}
                               canvasW={canvasW}
@@ -3129,8 +3303,9 @@ export default function App() {
                               editing={!isExporting}
                               keepRatioOnTransform={modifiers.shift || isMobile}
                               centeredScaling={modifiers.alt}
-                              onInteractionChange={setIsInteracting}
+	                              onInteractionChange={setObjectInteracting}
                               pushHistory={pushHistory}
+                              registerSelectableNode={registerSelectableNode}
                             />
                           );
                         }
@@ -3140,18 +3315,20 @@ export default function App() {
                             <DraggableText
                               key={item.id}
                               item={item}
-                              isSelected={item.id === selectedId}
-                              onSelect={() => {
-                                setSelectedId(item.id);
-                                setSelectedSlotId(null);                              }}
+	                              isSelected={item.id === selectedId}
+	                              onSelect={() => {
+	                                setSelectedId(item.id);
+	                                setSelectedSlotId(null);
+	                              }}
                               onChange={updateElement}
                               snapGuides={snapGuides}
                               canvasW={canvasW}
                               canvasH={canvasH}
                               transformerAnchorSize={transformerAnchorSize}
                               editing={!isExporting}
-                              onInteractionChange={setIsInteracting}
+	                              onInteractionChange={setObjectInteracting}
                               pushHistory={pushHistory}
+                              registerSelectableNode={registerSelectableNode}
                             />
                           );
                         }
@@ -3161,10 +3338,11 @@ export default function App() {
                             <StickerShape
                               key={item.id}
                               item={item}
-                              isSelected={item.id === selectedId}
-                              onSelect={() => {
-                                setSelectedId(item.id);
-                                setSelectedSlotId(null);                              }}
+	                              isSelected={item.id === selectedId}
+	                              onSelect={() => {
+	                                setSelectedId(item.id);
+	                                setSelectedSlotId(null);
+	                              }}
                               onChange={updateElement}
                               snapGuides={snapGuides}
                               canvasW={canvasW}
@@ -3172,34 +3350,15 @@ export default function App() {
                               transformerAnchorSize={transformerAnchorSize}
                               editing={!isExporting}
                               centeredScaling={modifiers.alt}
-                              onInteractionChange={setIsInteracting}
+	                              onInteractionChange={setObjectInteracting}
                               pushHistory={pushHistory}
+                              registerSelectableNode={registerSelectableNode}
                             />
                           );
                         }
 
                         return null;
                       })}
-
-                      {templateSlots.map((slot) => (
-                        <TemplateSlot
-                          key={slot.id}
-                          slot={slot}
-                          isSelected={slot.id === selectedSlotId}
-                          onSelect={() => {
-                            setSelectedSlotId(slot.id);
-                            setSelectedId(null);
-                          }}
-                          onChange={updateSlot}
-                          snapGuides={snapGuides}
-                          canvasW={canvasW}
-                          canvasH={canvasH}
-                          transformerAnchorSize={transformerAnchorSize}
-                          editing={!isExporting}
-                          onInteractionChange={setIsInteracting}
-                          pushHistory={pushHistory}
-                        />
-                      ))}
 
                       {!isExporting &&
                         showGuides &&
@@ -3213,7 +3372,7 @@ export default function App() {
                           />
                         ))}
 
-                      {!isExporting && showGuides && (
+                      {!isMobile && !isExporting && showGuides && (
                         <>
                           {activeGuides.vertical.map((x, idx) => (
                             <React.Fragment key={`gv-${idx}`}>
@@ -3247,6 +3406,15 @@ export default function App() {
                           ))}
                         </>
                       )}
+
+                      <SelectionTransformer
+                        selectedNode={selectedNode}
+                        selectedType={selectedNodeType}
+                        editing={!isExporting}
+                        transformerAnchorSize={transformerAnchorSize}
+                        keepRatioOnTransform={modifiers.shift || isMobile}
+                        centeredScaling={modifiers.alt}
+                      />
                     </Layer>
                   </Stage>
                 </div>
@@ -3260,8 +3428,6 @@ export default function App() {
 
 
         </div>
-        {!isMobile && <PreviewPanelUI {...previewPanelProps} />}
-
         {!isMobile && (
           <BottomAssetTray
             images={images}
@@ -3278,6 +3444,7 @@ export default function App() {
             onPickImage={addImageToCanvas}
             activeTab={mobileTab}
             onTabChange={(tab) => {
+              if (tab === "preview") refreshPreviews({ reveal: true });
               setMobileTab(tab);
               setMobileDrawerOpen(true);
             }}
@@ -3305,6 +3472,7 @@ export default function App() {
             onRemove={removeSelected}
             onClearSelection={clearSelection}
           />
+          <PreviewPanelUI {...previewPanelProps} />
         </aside>
       )}
 
