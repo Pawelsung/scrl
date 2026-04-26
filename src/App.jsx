@@ -2586,6 +2586,37 @@ export default function App() {
     return list;
   };
 
+  const exportSlice = async (index, pixelRatio = 1) => {
+    setIsExporting(true);
+    const previousSelected = selectedId;
+    const previousSelectedSlot = selectedSlotId;
+    setSelectedId(null);
+    setSelectedSlotId(null);
+
+    await new Promise((r) => setTimeout(r, 50));
+
+    const stage = stageRef.current;
+    if (!stage) {
+      setIsExporting(false);
+      setSelectedId(previousSelected);
+      setSelectedSlotId(previousSelectedSlot);
+      return null;
+    }
+
+    const dataUrl = stage.toDataURL({
+      x: index * singleW,
+      y: 0,
+      width: singleW,
+      height: singleH,
+      pixelRatio,
+    });
+
+    setIsExporting(false);
+    setSelectedId(previousSelected);
+    setSelectedSlotId(previousSelectedSlot);
+    return dataUrl;
+  };
+
   const refreshPreviews = async ({ reveal = false } = {}) => {
     const data = await exportSlices(isMobile ? 0.32 : 0.45);
     setPreviews(data);
@@ -3117,17 +3148,23 @@ export default function App() {
       id: `preview-${idx + 1}`,
       src,
     })),
-    onDownloadOne: (preview, index) => {
+    onDownloadOne: async (preview, index) => {
       const filename = `carousel_${String(index + 1).padStart(2, "0")}.png`;
+      const fullSizeSrc = await exportSlice(index);
+      if (!fullSizeSrc) return;
+
       if (isMobile) {
-        shareDataUrlToIOS(preview.src, filename);
+        shareDataUrlToIOS(fullSizeSrc, filename);
       } else {
-        downloadDataUrl(preview.src, filename);
+        downloadDataUrl(fullSizeSrc, filename);
       }
     },
     onSaveOne: isMobile
-      ? (preview, index) =>
-          shareDataUrlToIOS(preview.src, `carousel_${String(index + 1).padStart(2, "0")}.png`)
+      ? async (preview, index) => {
+          const filename = `carousel_${String(index + 1).padStart(2, "0")}.png`;
+          const fullSizeSrc = await exportSlice(index);
+          if (fullSizeSrc) shareDataUrlToIOS(fullSizeSrc, filename);
+        }
       : null,
     onDownloadAll: downloadAll,
     isBusy: isExporting,
