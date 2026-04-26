@@ -2637,9 +2637,9 @@ export default function App() {
     try {
       const file = dataUrlToFile(dataUrl, filename);
 
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (navigator.share) {
         await navigator.share({
-          files: [file],
+          ...(navigator.canShare?.({ files: [file] }) ? { files: [file] } : {}),
           title: filename,
           text: "匯出的 carousel 圖片",
         });

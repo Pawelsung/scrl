@@ -1,5 +1,12 @@
-const CACHE_NAME = "scrl-cache-v1";
-const APP_SHELL = ["/", "/manifest.webmanifest", "/pwa-icon.svg", "/pwa-maskable.svg"];
+const CACHE_NAME = "scrl-cache-v2";
+const BASE_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, "");
+const toScopedPath = (path) => `${BASE_PATH}${path}`;
+const APP_SHELL = [
+  toScopedPath("/"),
+  toScopedPath("/manifest.webmanifest"),
+  toScopedPath("/pwa-icon.svg"),
+  toScopedPath("/pwa-maskable.svg"),
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -35,7 +42,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
           return res;
         })
-        .catch(() => caches.match("/"));
+        .catch(() => caches.match(toScopedPath("/")));
     })
   );
 });
