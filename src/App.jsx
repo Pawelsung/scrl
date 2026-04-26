@@ -2070,13 +2070,17 @@ export default function App() {
   const spanSelectedBoxAcrossTwoSlides = () => {
     updateSelectedBox((target) => {
       const nextWidth = singleW * 2;
-      const nextHeight = singleH;
+      const currentWidth = Math.max(selectedSlot ? 80 : 40, target.width || nextWidth);
+      const currentHeight = Math.max(
+        selectedSlot ? 80 : 40,
+        target.height || target.fontSize * 1.6 || currentWidth
+      );
+      const nextHeight = nextWidth * (currentHeight / currentWidth);
       const rotation = target.rotation || 0;
-      const currentHeight = target.height || target.fontSize * 1.6 || nextHeight;
       const center = getRotatedGeometry(
         target.x || 0,
         target.y || 0,
-        target.width || nextWidth,
+        currentWidth,
         currentHeight,
         rotation
       );
@@ -3250,10 +3254,6 @@ export default function App() {
     onFit45: () => setSelectedBoxAspect(4, 5),
     onSpanTwoSlides: spanSelectedBoxAcrossTwoSlides,
     onRotate90: rotateSelectedBox90,
-    onUndo: undo,
-    onRedo: redo,
-    canUndo: historyPast.length > 0,
-    canRedo: historyFuture.length > 0,
     onBringForward: selectedSlot ? bringForwardSlot : bringForward,
     onSendBackward: selectedSlot ? sendBackwardSlot : sendBackward,
     onDuplicate: duplicateSelected,
@@ -3343,8 +3343,8 @@ export default function App() {
             <div className="toolbar-actions">
               {!isMobile && (
                 <>
-                  <button className="ghost" onClick={undo}>上一步</button>
-                  <button className="ghost" onClick={redo}>下一步</button>
+                  <button className="ghost" onClick={undo}>復原</button>
+                  <button className="ghost" onClick={redo}>重做</button>
                   <button type="button" className="ghost danger" onClick={removeSelected}>刪除選取</button>
                   <button type="button" className="ghost" onClick={clearSavedDraft}>清除草稿</button>
                   <button type="button" onClick={() => refreshPreviews({ reveal: true })}>更新預覽</button>
@@ -3353,8 +3353,8 @@ export default function App() {
 
               {isMobile && (
                 <>
-                  <button className="ghost" onClick={undo}>上一步</button>
-                  <button className="ghost" onClick={redo}>下一步</button>
+                  <button className="ghost" onClick={undo}>復原</button>
+                  <button className="ghost" onClick={redo}>重做</button>
                   <button type="button" className="ghost" onClick={clearSelection}>取消</button>
                   <button type="button" className="ghost danger" onClick={removeSelected}>刪除</button>
                   <button type="button" className="ghost" onClick={clearSavedDraft}>清稿</button>

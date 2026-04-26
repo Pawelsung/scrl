@@ -53,21 +53,11 @@ export default function MobileBottomDock({
 
           {selectedActions?.hasSelection && selectedActions.canReorder && (
             <>
-              <button
-                type="button"
-                className="ghost"
-                onClick={selectedActions.onUndo}
-                disabled={!selectedActions.canUndo}
-              >
-                復原
+              <button type="button" className="ghost" onClick={selectedActions.onSendBackward}>
+                下移
               </button>
-              <button
-                type="button"
-                className="ghost"
-                onClick={selectedActions.onRedo}
-                disabled={!selectedActions.canRedo}
-              >
-                重做
+              <button type="button" className="ghost" onClick={selectedActions.onBringForward}>
+                上移
               </button>
               {selectedActions.onDuplicate && (
                 <button type="button" className="ghost" onClick={selectedActions.onDuplicate}>
