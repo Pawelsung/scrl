@@ -180,6 +180,81 @@ button.danger {
   background: linear-gradient(180deg, #ff7f7f, #e45858);
 }
 
+.export-quality-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(13, 20, 33, 0.9);
+}
+
+.export-quality-control span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.export-quality-control select {
+  width: auto;
+  min-width: 132px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 4px 18px 4px 4px;
+}
+
+.start-guide {
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  z-index: 18;
+  max-width: min(560px, calc(100% - 36px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(125, 178, 255, 0.24);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(44, 102, 233, 0.18), rgba(13, 20, 33, 0.92));
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+}
+
+.start-guide strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.start-guide p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.start-guide__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.export-status {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  z-index: 20;
+  transform: translateX(-50%);
+  padding: 10px 14px;
+  border: 1px solid rgba(125, 178, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(5, 7, 11, 0.88);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  color: #fff;
+  font-size: 13px;
+  pointer-events: none;
+}
+
 .asset-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1596,6 +1671,30 @@ button.danger {
 @media (max-width: 768px) {
   .mobile-bottom-dock {
     gap: 6px;
+  }
+
+  .export-quality-control {
+    order: 10;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .export-quality-control select {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .start-guide {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .start-guide__actions {
+    justify-content: stretch;
+  }
+
+  .start-guide__actions button {
+    flex: 1 1 120px;
   }
 
   .mobile-dock-actions {

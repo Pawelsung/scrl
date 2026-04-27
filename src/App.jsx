@@ -1512,6 +1512,8 @@ export default function App() {
   const isInteractingRef = useRef(false);
   const [previewExpandSignal, setPreviewExpandSignal] = useState(0);
   const [saveFallback, setSaveFallback] = useState(null);
+  const [exportScale, setExportScale] = useState(1);
+  const [exportStatus, setExportStatus] = useState("");
   const selectableNodesRef = useRef(new Map());
   const [selectableNodeRevision, setSelectableNodeRevision] = useState(0);
 
@@ -1559,6 +1561,9 @@ export default function App() {
   const singleH = RATIOS[ratioKey].h;
   const canvasW = singleW * slides;
   const canvasH = singleH;
+  const exportW = Math.round(singleW * exportScale);
+  const exportH = Math.round(singleH * exportScale);
+  const hasStartedProject = images.length > 0 || elements.length > 0 || templateSlots.length > 0;
 
   const selectedItem = elements.find((el) => el.id === selectedId) || null;
   const selectedSlot = templateSlots.find((slot) => slot.id === selectedSlotId) || null;
@@ -2668,6 +2673,7 @@ export default function App() {
 
   const exportSlices = async (pixelRatio = 1) => {
     setIsExporting(true);
+    setExportStatus("正在輸出正式圖片…");
     const previousSelected = selectedId;
     const previousSelectedSlot = selectedSlotId;
     setSelectedId(null);
@@ -2678,6 +2684,7 @@ export default function App() {
     const stage = stageRef.current;
     if (!stage) {
       setIsExporting(false);
+      setExportStatus("");
       return [];
     }
 
@@ -2694,6 +2701,7 @@ export default function App() {
     }
 
     setIsExporting(false);
+    setExportStatus("");
     setSelectedId(previousSelected);
     setSelectedSlotId(previousSelectedSlot);
     return list;
@@ -2701,6 +2709,7 @@ export default function App() {
 
   const exportSlice = async (index, pixelRatio = 1) => {
     setIsExporting(true);
+    setExportStatus(`正在輸出第 ${index + 1} 張正式圖片…`);
     const previousSelected = selectedId;
     const previousSelectedSlot = selectedSlotId;
     setSelectedId(null);
@@ -2711,6 +2720,7 @@ export default function App() {
     const stage = stageRef.current;
     if (!stage) {
       setIsExporting(false);
+      setExportStatus("");
       setSelectedId(previousSelected);
       setSelectedSlotId(previousSelectedSlot);
       return null;
@@ -2725,6 +2735,7 @@ export default function App() {
     });
 
     setIsExporting(false);
+    setExportStatus("");
     setSelectedId(previousSelected);
     setSelectedSlotId(previousSelectedSlot);
     return dataUrl;
@@ -2805,7 +2816,7 @@ export default function App() {
   const downloadAll = async () => {
     const stage = stageRef.current;
     if (!stage) return;
-    const data = await exportSlices();
+    const data = await exportSlices(exportScale);
     data.forEach((src, idx) => {
       setTimeout(() => {
         downloadDataUrl(src, `carousel_${String(idx + 1).padStart(2, "0")}.png`);
@@ -3282,10 +3293,12 @@ export default function App() {
     previews: previews.map((src, idx) => ({
       id: `preview-${idx + 1}`,
       src,
+      width: exportW,
+      height: exportH,
     })),
     onDownloadOne: async (preview, index) => {
       const filename = `carousel_${String(index + 1).padStart(2, "0")}.png`;
-      const fullSizeSrc = await exportSlice(index);
+      const fullSizeSrc = await exportSlice(index, exportScale);
       if (!fullSizeSrc) return;
 
       if (isMobile) {
@@ -3297,7 +3310,7 @@ export default function App() {
     onSaveOne: isMobile
       ? async (preview, index) => {
           const filename = `carousel_${String(index + 1).padStart(2, "0")}.png`;
-          const fullSizeSrc = await exportSlice(index);
+          const fullSizeSrc = await exportSlice(index, exportScale);
           if (fullSizeSrc) shareDataUrlToIOS(fullSizeSrc, filename);
         }
       : null,
@@ -3341,6 +3354,18 @@ export default function App() {
             </div>
 
             <div className="toolbar-actions">
+              <label className="export-quality-control">
+                <span>輸出</span>
+                <select
+                  value={exportScale}
+                  onChange={(e) => setExportScale(Number(e.target.value))}
+                  disabled={isExporting}
+                >
+                  <option value={1}>標準 {singleW}×{singleH}</option>
+                  <option value={2}>高畫質 {singleW * 2}×{singleH * 2}</option>
+                </select>
+              </label>
+
               {!isMobile && (
                 <>
                   <button className="ghost" onClick={undo}>復原</button>
@@ -3383,6 +3408,30 @@ export default function App() {
             onTouchCancelCapture={handleViewportTouchEnd}
             onDoubleClick={resetView}
           >
+            {isExporting && (
+              <div className="export-status" role="status">
+                {exportStatus || "正在輸出…"} · {exportW}×{exportH}
+              </div>
+            )}
+
+            {!hasStartedProject && (
+              <section className="start-guide">
+                <div>
+                  <strong>從這裡開始做一組 carousel</strong>
+                  <p>先上傳圖片或套用模板，再用切圖預覽確認每張輸出。</p>
+                </div>
+                <div className="start-guide__actions">
+                  <button type="button" onClick={handleUploadImages}>上傳圖片</button>
+                  <button type="button" className="ghost" onClick={() => applyTemplate("frame")}>
+                    圖框模板
+                  </button>
+                  <button type="button" className="ghost" onClick={() => applyTemplate("grid4")}>
+                    四格拼貼
+                  </button>
+                </div>
+              </section>
+            )}
+
             {(selectedItem || selectedSlot) && (
               <div className="rotation-hud">
                 {getSelectedTypeLabel(selectedItem, selectedSlot)} · {rotationDisplay}°
