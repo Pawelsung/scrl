@@ -19,30 +19,6 @@ export default function MobileBottomDock({
     <div className="mobile-bottom-dock">
       {(selectedActions?.hasSelection || onClearSelection) && (
         <div className="mobile-dock-actions">
-          {selectedActions?.isCropSlot && (
-            <div className="mobile-dock-group">
-              <span className="mobile-dock-label">框內圖片</span>
-              <button type="button" className="ghost" onClick={selectedActions.onCropZoomOut}>
-                圖-
-              </button>
-              <button type="button" className="ghost" onClick={selectedActions.onCropZoomIn}>
-                圖+
-              </button>
-              <button type="button" className="ghost" onClick={selectedActions.onCropUp}>
-                圖↑
-              </button>
-              <button type="button" className="ghost" onClick={selectedActions.onCropLeft}>
-                圖←
-              </button>
-              <button type="button" className="ghost" onClick={selectedActions.onCropDown}>
-                圖↓
-              </button>
-              <button type="button" className="ghost" onClick={selectedActions.onCropRight}>
-                圖→
-              </button>
-            </div>
-          )}
-
           {selectedActions?.hasSelection && (
             <div className="mobile-dock-group">
               <span className="mobile-dock-label">
@@ -67,13 +43,13 @@ export default function MobileBottomDock({
                 →
               </button>
               <button type="button" className="ghost" onClick={selectedActions.onFit45}>
-                4:5裁切
+                {selectedActions.fitLabel || "單張4:5"}
               </button>
               <button type="button" className="ghost" onClick={selectedActions.onSpanTwoSlides}>
-                跨兩張
+                {selectedActions.spanLabel || "跨兩張輪播"}
               </button>
               <button type="button" className="ghost" onClick={selectedActions.onRotate90}>
-                旋轉90
+                {selectedActions.rotateLabel || "旋轉90"}
               </button>
             </div>
           )}

@@ -1279,6 +1279,50 @@ button.danger {
   opacity: 0.42;
 }
 
+.mobile-crop-pad {
+  position: fixed;
+  z-index: 86;
+  width: 138px;
+  padding: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 16px;
+  background: rgba(13, 20, 33, 0.94);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+  touch-action: none;
+  user-select: none;
+}
+
+.mobile-crop-pad__handle {
+  width: 100%;
+  min-height: 30px;
+  margin: 0 0 7px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: grab;
+}
+
+.mobile-crop-pad__handle:active {
+  cursor: grabbing;
+}
+
+.mobile-crop-pad__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 38px);
+  gap: 4px;
+  justify-content: center;
+}
+
+.mobile-crop-pad__grid button {
+  min-width: 38px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .mobile-bottom-dock {
   position: fixed;
   left: 12px;

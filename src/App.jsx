@@ -345,6 +345,7 @@ function createSlot({
     imageOffsetX: 0,
     imageOffsetY: 0,
     imageZoom: 1,
+    imageRotation: 0,
   };
 }
 
@@ -363,6 +364,39 @@ function getCoverPlacement(imgW, imgH, frameW, frameH, zoom = 1, offsetX = 0, of
     y: (frameH - height) / 2 + offsetY,
     width,
     height,
+  };
+}
+
+function getCoverImageTransform(
+  imgW,
+  imgH,
+  frameW,
+  frameH,
+  zoom = 1,
+  offsetX = 0,
+  offsetY = 0,
+  rotation = 0
+) {
+  if (!imgW || !imgH || !frameW || !frameH) {
+    return { groupX: frameW / 2, groupY: frameH / 2, imageX: 0, imageY: 0, width: frameW, height: frameH };
+  }
+
+  const normalized = normalizeRotation(rotation);
+  const rotated = normalized === 90 || normalized === 270;
+  const fitW = rotated ? imgH : imgW;
+  const fitH = rotated ? imgW : imgH;
+  const scale = Math.max(frameW / fitW, frameH / fitH) * zoom;
+  const width = imgW * scale;
+  const height = imgH * scale;
+
+  return {
+    groupX: frameW / 2 + offsetX,
+    groupY: frameH / 2 + offsetY,
+    imageX: -width / 2,
+    imageY: -height / 2,
+    width,
+    height,
+    rotation: normalized,
   };
 }
 
@@ -1006,20 +1040,33 @@ function TemplateSlot({
               cornerRadius={slot.radius || 0}
             />
 
-            {image && (
-              <KonvaImage
-                image={image}
-                {...getCoverPlacement(
-                  image.width,
-                  image.height,
-                  slot.width,
-                  slot.height,
-                  slot.imageZoom || 1,
-                  slot.imageOffsetX || 0,
-                  slot.imageOffsetY || 0
-                )}
-              />
-            )}
+            {image && (() => {
+              const transform = getCoverImageTransform(
+                image.width,
+                image.height,
+                slot.width,
+                slot.height,
+                slot.imageZoom || 1,
+                slot.imageOffsetX || 0,
+                slot.imageOffsetY || 0,
+                slot.imageRotation || 0
+              );
+              return (
+                <Group
+                  x={transform.groupX}
+                  y={transform.groupY}
+                  rotation={transform.rotation}
+                >
+                  <KonvaImage
+                    image={image}
+                    x={transform.imageX}
+                    y={transform.imageY}
+                    width={transform.width}
+                    height={transform.height}
+                  />
+                </Group>
+              );
+            })()}
           </Group>
         )}
 
@@ -1141,7 +1188,7 @@ function SelectionQuickControls({ actions, compact = false }) {
         <span className="quick-control-label">大小 / 旋轉</span>
         <button type="button" className="ghost" onClick={actions.onScaleDown}>-</button>
         <button type="button" className="ghost" onClick={actions.onScaleUp}>+</button>
-        <button type="button" className="ghost" onClick={actions.onRotate90}>旋轉90</button>
+        <button type="button" className="ghost" onClick={actions.onRotate90}>{actions.rotateLabel || "旋轉90"}</button>
       </div>
 
       <div className="quick-control-group nudge">
@@ -1154,8 +1201,64 @@ function SelectionQuickControls({ actions, compact = false }) {
 
       <div className="quick-control-group">
         <span className="quick-control-label">裁切</span>
-        <button type="button" className="ghost" onClick={actions.onFit45}>4:5裁切</button>
-        <button type="button" className="ghost" onClick={actions.onSpanTwoSlides}>跨兩張</button>
+        <button type="button" className="ghost" onClick={actions.onFit45}>{actions.fitLabel || "單張4:5"}</button>
+        <button type="button" className="ghost" onClick={actions.onSpanTwoSlides}>{actions.spanLabel || "跨兩張輪播"}</button>
+      </div>
+    </div>
+  );
+}
+
+function MobileCropPad({ actions, hidden = false }) {
+  const [pos, setPos] = useState({ x: 16, y: 132 });
+  const dragRef = useRef(null);
+
+  if (hidden || !actions?.isCropSlot) return null;
+
+  const startDrag = (e) => {
+    dragRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      x: pos.x,
+      y: pos.y,
+    };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+
+  const moveDrag = (e) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const nextX = clamp(drag.x + e.clientX - drag.startX, 8, Math.max(8, window.innerWidth - 154));
+    const nextY = clamp(drag.y + e.clientY - drag.startY, 74, Math.max(74, window.innerHeight - 260));
+    setPos({ x: nextX, y: nextY });
+  };
+
+  const stopDrag = (e) => {
+    if (dragRef.current?.pointerId === e.pointerId) dragRef.current = null;
+  };
+
+  return (
+    <div className="mobile-crop-pad" style={{ left: pos.x, top: pos.y }}>
+      <button
+        type="button"
+        className="mobile-crop-pad__handle"
+        onPointerDown={startDrag}
+        onPointerMove={moveDrag}
+        onPointerUp={stopDrag}
+        onPointerCancel={stopDrag}
+      >
+        框內圖片
+      </button>
+      <div className="mobile-crop-pad__grid">
+        <button type="button" className="ghost" onClick={actions.onCropZoomOut}>-</button>
+        <button type="button" className="ghost" onClick={actions.onCropUp}>↑</button>
+        <button type="button" className="ghost" onClick={actions.onCropZoomIn}>+</button>
+        <button type="button" className="ghost" onClick={actions.onCropLeft}>←</button>
+        <button type="button" className="ghost" onClick={actions.onRotate90}>旋</button>
+        <button type="button" className="ghost" onClick={actions.onCropRight}>→</button>
+        <span />
+        <button type="button" className="ghost" onClick={actions.onCropDown}>↓</button>
+        <span />
       </div>
     </div>
   );
@@ -1270,6 +1373,7 @@ function InspectorContent({
                     imageOffsetX: 0,
                     imageOffsetY: 0,
                     imageZoom: 1,
+                    imageRotation: 0,
                   });
                 }}
               >
@@ -2163,6 +2267,7 @@ export default function App() {
           imageOffsetX: 0,
           imageOffsetY: 0,
           imageZoom: 1,
+          imageRotation: 0,
         };
       });
       return;
@@ -2191,6 +2296,7 @@ export default function App() {
       imageOffsetX: 0,
       imageOffsetY: 0,
       imageZoom: 1,
+      imageRotation: 0,
     };
 
     setTemplateSlots((prev) => [...prev, nextSlot]);
@@ -2211,6 +2317,37 @@ export default function App() {
   };
 
   const spanSelectedBoxAcrossTwoSlides = () => {
+    if (selectedSlot) {
+      updateSelectedBox((target) => {
+        const center = getRotatedGeometry(
+          target.x || 0,
+          target.y || 0,
+          target.width || singleW,
+          target.height || singleH,
+          target.rotation || 0
+        );
+        const spanCount = slides > 1 ? 2 : 1;
+        const startIndex = clamp(Math.floor(center.centerX / singleW), 0, Math.max(0, slides - spanCount));
+
+        return {
+          ...target,
+          x: startIndex * singleW,
+          y: 0,
+          width: singleW * spanCount,
+          height: singleH,
+          rotation: 0,
+          radius: 0,
+          strokeWidth: 0,
+          fill: "rgba(255,255,255,0)",
+          label: spanCount === 2 ? "跨兩張輪播裁切框" : "IG 4:5 裁切框",
+          imageOffsetX: 0,
+          imageOffsetY: 0,
+          imageZoom: 1,
+        };
+      });
+      return;
+    }
+
     updateSelectedBox((target) => {
       const nextWidth = singleW * 2;
       const currentWidth = Math.max(selectedSlot ? 80 : 40, target.width || nextWidth);
@@ -2240,6 +2377,17 @@ export default function App() {
   };
 
   const rotateSelectedBox90 = () => {
+    if (selectedSlot?.imageSrc) {
+      updateSelectedBox((target) => ({
+        ...target,
+        imageRotation: normalizeRotation((target.imageRotation || 0) + 90),
+        imageOffsetX: 0,
+        imageOffsetY: 0,
+        imageZoom: 1,
+      }));
+      return;
+    }
+
     updateSelectedBox((target) => {
       const width = target.width || 240;
       const height = target.height || target.fontSize * 1.6 || 240;
@@ -2266,6 +2414,7 @@ export default function App() {
       imageOffsetX: 0,
       imageOffsetY: 0,
       imageZoom: 1,
+      imageRotation: 0,
     });
   };
 
@@ -2312,6 +2461,7 @@ export default function App() {
                 imageOffsetX: 0,
                 imageOffsetY: 0,
                 imageZoom: 1,
+                imageRotation: 0,
               }
             : slot
         )
@@ -3395,6 +3545,9 @@ export default function App() {
     hasSelection: !!selectedItem || !!selectedSlot,
     canReorder: !!selectedItem || !!selectedSlot,
     isCropSlot: !!selectedSlot?.imageSrc,
+    fitLabel: selectedSlot?.imageSrc ? "單張4:5" : "做成4:5",
+    spanLabel: selectedSlot ? "跨兩張輪播" : "跨兩張",
+    rotateLabel: selectedSlot?.imageSrc ? "旋轉框內圖" : "旋轉90",
     onScaleDown: () => scaleSelectedBox(0.92),
     onScaleUp: () => scaleSelectedBox(1.08),
     onNudgeUp: () => nudgeSelectedBox(0, -8),
@@ -3842,6 +3995,13 @@ export default function App() {
             hidden={mobileDrawerOpen}
             selectedActions={mobileSelectedActions}
             onClearSelection={clearSelection}
+          />
+        )}
+
+        {isMobile && (
+          <MobileCropPad
+            actions={mobileSelectedActions}
+            hidden={mobileDrawerOpen || isExporting}
           />
         )}
 
