@@ -19,6 +19,29 @@ export default function MobileBottomDock({
     <div className="mobile-bottom-dock">
       {(selectedActions?.hasSelection || onClearSelection) && (
         <div className="mobile-dock-actions">
+          {selectedActions?.isCropSlot && (
+            <>
+              <button type="button" className="ghost" onClick={selectedActions.onCropZoomOut}>
+                圖-
+              </button>
+              <button type="button" className="ghost" onClick={selectedActions.onCropZoomIn}>
+                圖+
+              </button>
+              <button type="button" className="ghost" onClick={selectedActions.onCropUp}>
+                圖↑
+              </button>
+              <button type="button" className="ghost" onClick={selectedActions.onCropLeft}>
+                圖←
+              </button>
+              <button type="button" className="ghost" onClick={selectedActions.onCropDown}>
+                圖↓
+              </button>
+              <button type="button" className="ghost" onClick={selectedActions.onCropRight}>
+                圖→
+              </button>
+            </>
+          )}
+
           {selectedActions?.hasSelection && (
             <>
               <button type="button" className="ghost" onClick={selectedActions.onScaleDown}>

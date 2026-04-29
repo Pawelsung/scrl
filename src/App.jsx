@@ -1163,7 +1163,7 @@ function InspectorContent({
           <strong>已選取模板圖框</strong>
           <div style={{ marginTop: 8, color: "#9ba8bb" }}>
             {selectedSlot.imageName
-              ? `已放入：${selectedSlot.imageName}`
+              ? `已放入：${selectedSlot.imageName}。可調整框內縮放與位移來決定裁切位置。`
               : "目前尚未放圖，先點選這個圖框，再到素材區點圖片即可填入。"}
           </div>
         </div>
@@ -2162,9 +2162,9 @@ export default function App() {
       height: nextHeight,
       radius: selectedItem.radius || 0,
       stroke: selectedItem.borderColor || "#ffffff",
-      strokeWidth: selectedItem.borderWidth || 0,
-      fill: "rgba(255,255,255,0.04)",
-      label: "4:5 Crop",
+      strokeWidth: Math.max(4, selectedItem.borderWidth || 0),
+      fill: "rgba(255,255,255,0.02)",
+      label: "4:5 裁切框",
     });
     const nextSlot = {
       ...slot,
@@ -3377,12 +3377,19 @@ export default function App() {
   const mobileSelectedActions = {
     hasSelection: !!selectedItem || !!selectedSlot,
     canReorder: !!selectedItem || !!selectedSlot,
+    isCropSlot: !!selectedSlot?.imageSrc,
     onScaleDown: () => scaleSelectedBox(0.92),
     onScaleUp: () => scaleSelectedBox(1.08),
     onNudgeUp: () => nudgeSelectedBox(0, -8),
     onNudgeDown: () => nudgeSelectedBox(0, 8),
     onNudgeLeft: () => nudgeSelectedBox(-8, 0),
     onNudgeRight: () => nudgeSelectedBox(8, 0),
+    onCropZoomOut: () => zoomSelectedSlot(-1),
+    onCropZoomIn: () => zoomSelectedSlot(1),
+    onCropUp: () => nudgeSelectedSlot(0, -1),
+    onCropDown: () => nudgeSelectedSlot(0, 1),
+    onCropLeft: () => nudgeSelectedSlot(-1, 0),
+    onCropRight: () => nudgeSelectedSlot(1, 0),
     onFit45: setSelectedCrop45,
     onSpanTwoSlides: spanSelectedBoxAcrossTwoSlides,
     onRotate90: rotateSelectedBox90,
