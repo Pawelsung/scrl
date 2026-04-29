@@ -3347,7 +3347,7 @@ export default function App() {
         <div className="canvas-panel">
           <div className="canvas-toolbar">
             <div>
-              <strong>SCRL Lite</strong>
+              <strong>SCRL Studio</strong>
               <span className="sub">
                 手機：選到圖片 / 貼紙 / 圖框後，雙指 pinch 會縮放物件；空白處雙指 pinch 才縮放畫布
               </span>
@@ -3361,8 +3361,8 @@ export default function App() {
                   onChange={(e) => setExportScale(Number(e.target.value))}
                   disabled={isExporting}
                 >
-                  <option value={1}>標準 {singleW}×{singleH}</option>
-                  <option value={2}>高畫質 {singleW * 2}×{singleH * 2}</option>
+                  <option value={1}>標準 · {singleW}×{singleH}</option>
+                  <option value={2}>高畫質 · {singleW * 2}×{singleH * 2}</option>
                 </select>
               </label>
 
@@ -3613,20 +3613,20 @@ export default function App() {
                           />
                         ))}
 
-                      {!isMobile && !isExporting && showGuides && (
+                      {!isExporting && showGuides && (
                         <>
                           {activeGuides.vertical.map((x, idx) => (
                             <React.Fragment key={`gv-${idx}`}>
                               <Line
                                 points={[x, 0, x, canvasH]}
                                 stroke={hexToRgba("#35f2a1", 0.22)}
-                                strokeWidth={10}
+                                strokeWidth={isMobile ? 6 : 10}
                               />
                               <Line
                                 points={[x, 0, x, canvasH]}
                                 stroke={hexToRgba("#35f2a1", 0.98)}
                                 dash={[14, 8]}
-                                strokeWidth={3}
+                                strokeWidth={isMobile ? 2 : 3}
                               />
                             </React.Fragment>
                           ))}
@@ -3635,13 +3635,13 @@ export default function App() {
                               <Line
                                 points={[0, y, canvasW, y]}
                                 stroke={hexToRgba("#35f2a1", 0.22)}
-                                strokeWidth={10}
+                                strokeWidth={isMobile ? 6 : 10}
                               />
                               <Line
                                 points={[0, y, canvasW, y]}
                                 stroke={hexToRgba("#35f2a1", 0.98)}
                                 dash={[14, 8]}
-                                strokeWidth={3}
+                                strokeWidth={isMobile ? 2 : 3}
                               />
                             </React.Fragment>
                           ))}

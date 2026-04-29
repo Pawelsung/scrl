@@ -197,7 +197,7 @@ button.danger {
 
 .export-quality-control select {
   width: auto;
-  min-width: 132px;
+  min-width: 178px;
   border: 0;
   background: transparent;
   color: var(--text);
@@ -1674,14 +1674,19 @@ button.danger {
   }
 
   .export-quality-control {
+    grid-column: 1 / -1;
     order: 10;
     width: 100%;
     justify-content: space-between;
+    overflow: hidden;
   }
 
   .export-quality-control select {
     min-width: 0;
     flex: 1;
+    font-size: 13px;
+    padding-right: 4px;
+    text-overflow: ellipsis;
   }
 
   .start-guide {
