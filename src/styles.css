@@ -979,6 +979,11 @@ button.danger {
   display: block;
 }
 
+.bottom-asset-tray__spacer {
+  flex: 0 0 auto;
+  height: 1px;
+}
+
 .bottom-asset-tray__empty {
   font-size: 12px;
   color: #94a3b8;

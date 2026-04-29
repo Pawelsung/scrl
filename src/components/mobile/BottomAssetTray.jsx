@@ -1,4 +1,7 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
+
+const THUMB_STRIDE = 86;
+const VISIBLE_BUFFER = 8;
 
 export default function BottomAssetTray({
   images = [],
@@ -6,6 +9,21 @@ export default function BottomAssetTray({
   onPickImage,
   persistent = false,
 }) {
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const virtual = useMemo(() => {
+    if (images.length <= 36) {
+      return { before: 0, after: 0, items: images };
+    }
+
+    const start = Math.max(0, Math.floor(scrollLeft / THUMB_STRIDE) - VISIBLE_BUFFER);
+    const end = Math.min(images.length, start + 32);
+    return {
+      before: start * THUMB_STRIDE,
+      after: Math.max(0, (images.length - end) * THUMB_STRIDE),
+      items: images.slice(start, end),
+    };
+  }, [images, scrollLeft]);
+
   return (
     <div
       className={
@@ -25,21 +43,29 @@ export default function BottomAssetTray({
         </div>
       </div>
 
-      <div className="bottom-asset-tray__rail">
+      <div className="bottom-asset-tray__rail" onScroll={(e) => setScrollLeft(e.currentTarget.scrollLeft)}>
         {images.length === 0 ? (
           <div className="bottom-asset-tray__empty">先上傳圖片，這裡會顯示素材預覽。</div>
         ) : (
-          images.map((img) => (
-            <button
-              key={img.id}
-              type="button"
-              className="bottom-asset-tray__thumb"
-              onClick={() => onPickImage(img)}
-              title={img.name || "image"}
-            >
-              <img src={img.src} alt={img.name || "image"} />
-            </button>
-          ))
+          <>
+            {virtual.before > 0 && (
+              <span className="bottom-asset-tray__spacer" style={{ width: virtual.before }} />
+            )}
+            {virtual.items.map((img) => (
+              <button
+                key={img.id}
+                type="button"
+                className="bottom-asset-tray__thumb"
+                onClick={() => onPickImage(img)}
+                title={img.name || "image"}
+              >
+                <img src={img.thumbSrc || img.src} alt={img.name || "image"} loading="lazy" />
+              </button>
+            ))}
+            {virtual.after > 0 && (
+              <span className="bottom-asset-tray__spacer" style={{ width: virtual.after }} />
+            )}
+          </>
         )}
       </div>
     </div>

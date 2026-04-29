@@ -406,6 +406,24 @@ function getCoverImageTransform(
   };
 }
 
+function resizeImageSource(image, maxDimension, mime = "image/jpeg", quality = 0.9) {
+  const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+  const width = Math.max(1, Math.round(image.width * scale));
+  const height = Math.max(1, Math.round(image.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(image, 0, 0, width, height);
+  return {
+    src: canvas.toDataURL(mime, quality),
+    width,
+    height,
+  };
+}
+
 function roundedRectPath(ctx, w, h, r) {
   const rr = Math.max(0, Math.min(r || 0, Math.min(w, h) / 2));
   ctx.beginPath();
@@ -1846,7 +1864,7 @@ export default function App() {
       } catch (err) {
         console.error("Failed to save draft:", err);
       }
-    }, isMobile ? 1400 : 900);
+    }, isMobile ? 3200 : 900);
 
     return () => {
       if (autosaveTimerRef.current) {
@@ -1883,7 +1901,7 @@ export default function App() {
     setSlides(3);
     setRatioKey("4:5");
     setBackgroundMode("solid");
-    setBgPrimary("#ffffff");
+    setBgPrimary("#eef0f3");
     setBgSecondary("#f3f4f6");
     setImages([]);
     setElements([]);
@@ -2514,12 +2532,16 @@ export default function App() {
             reader.onload = () => {
               const img = new window.Image();
               img.onload = () => {
+                const outputMime = file.type === "image/png" ? "image/png" : "image/jpeg";
+                const working = resizeImageSource(img, 4096, outputMime, 0.9);
+                const thumb = resizeImageSource(img, 260, "image/jpeg", 0.76);
                 resolve({
                   id: uid("asset"),
                   name: file.name,
-                  src: reader.result,
-                  width: img.width,
-                  height: img.height,
+                  src: working.src,
+                  thumbSrc: thumb.src,
+                  width: working.width,
+                  height: working.height,
                   mediaType: "image",
                 });
               };
