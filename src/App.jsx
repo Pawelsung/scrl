@@ -93,6 +93,14 @@ function normalizeRotation(rotation = 0) {
   return next;
 }
 
+function rotateDelta(dx, dy, rotation = 0) {
+  const rad = (rotation * Math.PI) / 180;
+  return {
+    dx: dx * Math.cos(rad) - dy * Math.sin(rad),
+    dy: dx * Math.sin(rad) + dy * Math.cos(rad),
+  };
+}
+
 function getSelectedTypeLabel(item, slot) {
   if (slot) return "模板圖框";
   if (!item) return "";
@@ -1124,12 +1132,14 @@ function SelectionQuickControls({ actions, compact = false }) {
   return (
     <div className={`selection-quick-controls ${compact ? "compact" : ""}`}>
       <div className="quick-control-group">
+        <span className="quick-control-label">大小 / 旋轉</span>
         <button type="button" className="ghost" onClick={actions.onScaleDown}>-</button>
         <button type="button" className="ghost" onClick={actions.onScaleUp}>+</button>
         <button type="button" className="ghost" onClick={actions.onRotate90}>旋轉90</button>
       </div>
 
       <div className="quick-control-group nudge">
+        <span className="quick-control-label">物件方向</span>
         <button type="button" className="ghost" onClick={actions.onNudgeUp}>↑</button>
         <button type="button" className="ghost" onClick={actions.onNudgeLeft}>←</button>
         <button type="button" className="ghost" onClick={actions.onNudgeDown}>↓</button>
@@ -1137,6 +1147,7 @@ function SelectionQuickControls({ actions, compact = false }) {
       </div>
 
       <div className="quick-control-group">
+        <span className="quick-control-label">裁切</span>
         <button type="button" className="ghost" onClick={actions.onFit45}>4:5裁切</button>
         <button type="button" className="ghost" onClick={actions.onSpanTwoSlides}>跨兩張</button>
       </div>
@@ -2074,10 +2085,12 @@ export default function App() {
   };
 
   const nudgeSelectedBox = (dx, dy) => {
+    const target = selectedSlot || selectedItem;
+    const moved = rotateDelta(dx, dy, target?.rotation || 0);
     updateSelectedBox((target) => ({
       ...target,
-      x: (target.x || 0) + dx,
-      y: (target.y || 0) + dy,
+      x: (target.x || 0) + moved.dx,
+      y: (target.y || 0) + moved.dy,
     }));
   };
 

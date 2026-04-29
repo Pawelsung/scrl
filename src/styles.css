@@ -1222,8 +1222,16 @@ button.danger {
 
 .quick-control-group {
   display: flex;
+  align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.quick-control-label {
+  flex: 0 0 76px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .quick-control-group button {
@@ -1242,6 +1250,21 @@ button.danger {
 
 .mobile-dock-actions::-webkit-scrollbar {
   display: none;
+}
+
+.mobile-dock-group {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.mobile-dock-label {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .mobile-dock-actions button {

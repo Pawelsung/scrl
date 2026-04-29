@@ -20,7 +20,8 @@ export default function MobileBottomDock({
       {(selectedActions?.hasSelection || onClearSelection) && (
         <div className="mobile-dock-actions">
           {selectedActions?.isCropSlot && (
-            <>
+            <div className="mobile-dock-group">
+              <span className="mobile-dock-label">框內圖片</span>
               <button type="button" className="ghost" onClick={selectedActions.onCropZoomOut}>
                 圖-
               </button>
@@ -39,11 +40,14 @@ export default function MobileBottomDock({
               <button type="button" className="ghost" onClick={selectedActions.onCropRight}>
                 圖→
               </button>
-            </>
+            </div>
           )}
 
           {selectedActions?.hasSelection && (
-            <>
+            <div className="mobile-dock-group">
+              <span className="mobile-dock-label">
+                {selectedActions.isCropSlot ? "裁切框" : "物件"}
+              </span>
               <button type="button" className="ghost" onClick={selectedActions.onScaleDown}>
                 -
               </button>
@@ -71,11 +75,12 @@ export default function MobileBottomDock({
               <button type="button" className="ghost" onClick={selectedActions.onRotate90}>
                 旋轉90
               </button>
-            </>
+            </div>
           )}
 
           {selectedActions?.hasSelection && selectedActions.canReorder && (
-            <>
+            <div className="mobile-dock-group">
+              <span className="mobile-dock-label">圖層</span>
               <button type="button" className="ghost" onClick={selectedActions.onSendBackward}>
                 下移
               </button>
@@ -90,7 +95,7 @@ export default function MobileBottomDock({
               <button type="button" className="ghost danger" onClick={selectedActions.onRemove}>
                 刪除
               </button>
-            </>
+            </div>
           )}
 
           {selectedActions?.hasSelection && (
