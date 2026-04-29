@@ -382,6 +382,7 @@ function DraggableImage({
   onInteractionChange,
   pushHistory,
   registerSelectableNode,
+  onSnapChange,
 }) {
   const image = useImage(item.src);
   const shapeRef = useRef(null);
@@ -431,6 +432,10 @@ function DraggableImage({
                   },
                   snapGuides
                 );
+                onSnapChange?.({
+                  vertical: snapped.vertical != null ? [snapped.vertical] : [],
+                  horizontal: snapped.horizontal != null ? [snapped.horizontal] : [],
+                });
 
                 const nextPos = clampDraggedPositionForRotatedBox(
                   node.x() + snapped.dx,
@@ -451,6 +456,7 @@ function DraggableImage({
             ? (e) => {
                 const node = e.target;
                 onInteractionChange?.(false);
+                onSnapChange?.({ vertical: [], horizontal: [] });
                 onChange({
                   ...item,
                   x: node.x(),
@@ -508,6 +514,7 @@ function DraggableText({
   onInteractionChange,
   pushHistory,
   registerSelectableNode,
+  onSnapChange,
 }) {
   const textRef = useRef(null);
 
@@ -566,6 +573,10 @@ function DraggableText({
                   },
                   snapGuides
                 );
+                onSnapChange?.({
+                  vertical: snapped.vertical != null ? [snapped.vertical] : [],
+                  horizontal: snapped.horizontal != null ? [snapped.horizontal] : [],
+                });
 
                 const nextPos = clampDraggedPositionForRotatedBox(
                   node.x() + snapped.dx,
@@ -586,6 +597,7 @@ function DraggableText({
             ? (e) => {
                 const node = e.target;
                 onInteractionChange?.(false);
+                onSnapChange?.({ vertical: [], horizontal: [] });
                 onChange({
                   ...item,
                   x: node.x(),
@@ -641,6 +653,7 @@ function StickerShape({
   onInteractionChange,
   pushHistory,
   registerSelectableNode,
+  onSnapChange,
 }) {
   const groupRef = useRef(null);
 
@@ -680,6 +693,10 @@ function StickerShape({
                   },
                   snapGuides
                 );
+                onSnapChange?.({
+                  vertical: snapped.vertical != null ? [snapped.vertical] : [],
+                  horizontal: snapped.horizontal != null ? [snapped.horizontal] : [],
+                });
 
                 const nextPos = clampDraggedPositionForRotatedBox(
                   node.x() + snapped.dx,
@@ -700,6 +717,7 @@ function StickerShape({
             ? (e) => {
                 const node = e.target;
                 onInteractionChange?.(false);
+                onSnapChange?.({ vertical: [], horizontal: [] });
                 onChange({
                   ...item,
                   x: node.x(),
@@ -851,6 +869,7 @@ function TemplateSlot({
   showHitArea = true,
   interactive = true,
   registerSelectableNode,
+  onSnapChange,
 }) {
   const groupRef = useRef(null);
   const image = useImage(slot.imageSrc);
@@ -890,6 +909,10 @@ function TemplateSlot({
                   },
                   snapGuides
                 );
+                onSnapChange?.({
+                  vertical: snapped.vertical != null ? [snapped.vertical] : [],
+                  horizontal: snapped.horizontal != null ? [snapped.horizontal] : [],
+                });
 
                 const nextPos = clampDraggedPositionForRotatedBox(
                   node.x() + snapped.dx,
@@ -910,6 +933,7 @@ function TemplateSlot({
             ? (e) => {
                 const node = e.target;
                 onInteractionChange?.(false);
+                onSnapChange?.({ vertical: [], horizontal: [] });
                 onChange({
                   ...slot,
                   x: node.x(),
@@ -1113,7 +1137,7 @@ function SelectionQuickControls({ actions, compact = false }) {
       </div>
 
       <div className="quick-control-group">
-        <button type="button" className="ghost" onClick={actions.onFit45}>4:5</button>
+        <button type="button" className="ghost" onClick={actions.onFit45}>4:5裁切</button>
         <button type="button" className="ghost" onClick={actions.onSpanTwoSlides}>跨兩張</button>
       </div>
     </div>
@@ -1514,6 +1538,7 @@ export default function App() {
   const [saveFallback, setSaveFallback] = useState(null);
   const [exportScale, setExportScale] = useState(1);
   const [exportStatus, setExportStatus] = useState("");
+  const [liveGuides, setLiveGuides] = useState({ vertical: [], horizontal: [] });
   const selectableNodesRef = useRef(new Map());
   const [selectableNodeRevision, setSelectableNodeRevision] = useState(0);
 
@@ -1999,13 +2024,14 @@ export default function App() {
   }, [canvasW, canvasH, slides, singleW]);
 
   const activeGuides = useMemo(() => {
+    if (liveGuides.vertical.length || liveGuides.horizontal.length) return liveGuides;
     const target = selectedSlot || selectedItem;
     if (!target) return { vertical: [], horizontal: [] };
     return {
       vertical: target.snapV != null ? [target.snapV] : [],
       horizontal: target.snapH != null ? [target.snapH] : [],
     };
-  }, [selectedItem, selectedSlot]);
+  }, [liveGuides, selectedItem, selectedSlot]);
 
   const updateElement = (next) => {
     setElements((prev) => prev.map((el) => (el.id === next.id ? next : el)));
@@ -2014,6 +2040,10 @@ export default function App() {
   const updateSlot = (next) => {
     setTemplateSlots((prev) => prev.map((slot) => (slot.id === next.id ? next : slot)));
   };
+
+  useEffect(() => {
+    setLiveGuides({ vertical: [], horizontal: [] });
+  }, [selectedId, selectedSlotId]);
 
   const nudgeSelectedSlot = (dxDir, dyDir) => {
     if (!selectedSlot) return;
@@ -2078,6 +2108,89 @@ export default function App() {
         height: Math.max(selectedSlot ? 80 : 40, width * (heightRatio / widthRatio)),
       };
     });
+  };
+
+  const setSelectedCrop45 = () => {
+    const minSize = selectedSlot ? 80 : 40;
+
+    if (selectedSlot) {
+      updateSelectedBox((target) => {
+        const nextWidth = Math.max(minSize, target.width || 240);
+        const nextHeight = nextWidth * 1.25;
+        const rotation = target.rotation || 0;
+        const center = getRotatedGeometry(
+          target.x || 0,
+          target.y || 0,
+          target.width || nextWidth,
+          target.height || nextHeight,
+          rotation
+        );
+        const rad = (rotation * Math.PI) / 180;
+
+        return {
+          ...target,
+          x: center.centerX - (nextWidth / 2) * Math.cos(rad) + (nextHeight / 2) * Math.sin(rad),
+          y: center.centerY - (nextWidth / 2) * Math.sin(rad) - (nextHeight / 2) * Math.cos(rad),
+          width: nextWidth,
+          height: nextHeight,
+        };
+      });
+      return;
+    }
+
+    if (selectedItem?.type !== "image") {
+      setSelectedBoxAspect(4, 5);
+      return;
+    }
+
+    pushHistory();
+    const nextWidth = Math.max(80, selectedItem.width || 240);
+    const nextHeight = nextWidth * 1.25;
+    const rotation = selectedItem.rotation || 0;
+    const center = getRotatedGeometry(
+      selectedItem.x || 0,
+      selectedItem.y || 0,
+      selectedItem.width || nextWidth,
+      selectedItem.height || nextHeight,
+      rotation
+    );
+    const rad = (rotation * Math.PI) / 180;
+    const slot = createSlot({
+      x: center.centerX - (nextWidth / 2) * Math.cos(rad) + (nextHeight / 2) * Math.sin(rad),
+      y: center.centerY - (nextWidth / 2) * Math.sin(rad) - (nextHeight / 2) * Math.cos(rad),
+      width: nextWidth,
+      height: nextHeight,
+      radius: selectedItem.radius || 0,
+      stroke: selectedItem.borderColor || "#ffffff",
+      strokeWidth: selectedItem.borderWidth || 0,
+      fill: "rgba(255,255,255,0.04)",
+      label: "4:5 Crop",
+    });
+    const nextSlot = {
+      ...slot,
+      rotation,
+      imageSrc: selectedItem.src,
+      imageName: selectedItem.name || "圖片",
+      imageOffsetX: 0,
+      imageOffsetY: 0,
+      imageZoom: 1,
+    };
+
+    setTemplateSlots((prev) => [...prev, nextSlot]);
+    setElements((prev) => prev.filter((item) => item.id !== selectedItem.id));
+    setLayerOrder((prev) => {
+      let replaced = false;
+      const mapped = normalizeLayerOrder(prev, elements, templateSlots).map((entry) => {
+        if (entry.kind === "element" && entry.id === selectedItem.id) {
+          replaced = true;
+          return { kind: "slot", id: nextSlot.id };
+        }
+        return entry;
+      });
+      return replaced ? mapped : [...mapped, { kind: "slot", id: nextSlot.id }];
+    });
+    setSelectedId(null);
+    setSelectedSlotId(nextSlot.id);
   };
 
   const spanSelectedBoxAcrossTwoSlides = () => {
@@ -3270,7 +3383,7 @@ export default function App() {
     onNudgeDown: () => nudgeSelectedBox(0, 8),
     onNudgeLeft: () => nudgeSelectedBox(-8, 0),
     onNudgeRight: () => nudgeSelectedBox(8, 0),
-    onFit45: () => setSelectedBoxAspect(4, 5),
+    onFit45: setSelectedCrop45,
     onSpanTwoSlides: spanSelectedBoxAcrossTwoSlides,
     onRotate90: rotateSelectedBox90,
     onBringForward: selectedSlot ? bringForwardSlot : bringForward,
@@ -3527,6 +3640,7 @@ export default function App() {
 	                              onInteractionChange={setObjectInteracting}
                               pushHistory={pushHistory}
                               registerSelectableNode={registerSelectableNode}
+                              onSnapChange={setLiveGuides}
                             />
                           );
                         }
@@ -3555,6 +3669,7 @@ export default function App() {
 	                              onInteractionChange={setObjectInteracting}
                               pushHistory={pushHistory}
                               registerSelectableNode={registerSelectableNode}
+                              onSnapChange={setLiveGuides}
                             />
                           );
                         }
@@ -3578,6 +3693,7 @@ export default function App() {
 	                              onInteractionChange={setObjectInteracting}
                               pushHistory={pushHistory}
                               registerSelectableNode={registerSelectableNode}
+                              onSnapChange={setLiveGuides}
                             />
                           );
                         }
@@ -3602,6 +3718,7 @@ export default function App() {
 	                              onInteractionChange={setObjectInteracting}
                               pushHistory={pushHistory}
                               registerSelectableNode={registerSelectableNode}
+                              onSnapChange={setLiveGuides}
                             />
                           );
                         }

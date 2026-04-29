@@ -40,7 +40,7 @@ export default function MobileBottomDock({
                 →
               </button>
               <button type="button" className="ghost" onClick={selectedActions.onFit45}>
-                4:5
+                4:5裁切
               </button>
               <button type="button" className="ghost" onClick={selectedActions.onSpanTwoSlides}>
                 跨兩張
