@@ -102,12 +102,18 @@ function rotateDelta(dx, dy, rotation = 0) {
 }
 
 function getSelectedTypeLabel(item, slot) {
-  if (slot) return "模板圖框";
+  if (slot) return slot.imageSrc ? "裁切框" : "模板圖框";
   if (!item) return "";
   if (item.type === "image") return "圖片";
   if (item.type === "text") return "文字";
   if (item.type === "sticker") return "貼紙";
   return "物件";
+}
+
+function getSlotFrameStrokeWidth(slot, isSelected) {
+  const baseWidth = slot.strokeWidth == null ? 4 : slot.strokeWidth;
+  if (!isSelected) return baseWidth;
+  return baseWidth > 0 ? baseWidth + 1 : 3;
 }
 
 function useImage(src) {
@@ -1048,7 +1054,7 @@ function TemplateSlot({
             height={slot.height}
             cornerRadius={slot.radius || 0}
             stroke={isSelected ? "#7db2ff" : slot.stroke || "#ffffff"}
-            strokeWidth={isSelected ? Math.max(3, (slot.strokeWidth || 4) + 1) : slot.strokeWidth || 4}
+            strokeWidth={getSlotFrameStrokeWidth(slot, isSelected)}
           />
         )}
       </Group>
@@ -1171,10 +1177,10 @@ function InspectorContent({
     return (
       <>
         <div className="hint-card" style={{ marginBottom: 12 }}>
-          <strong>已選取模板圖框</strong>
+          <strong>{selectedSlot.imageSrc ? "已選取裁切框" : "已選取模板圖框"}</strong>
           <div style={{ marginTop: 8, color: "#9ba8bb" }}>
             {selectedSlot.imageName
-              ? `已放入：${selectedSlot.imageName}。可調整框內縮放與位移來決定裁切位置。`
+              ? `已放入：${selectedSlot.imageName}。畫面只會輸出遮罩框內的範圍，可調整框內圖片縮放與位置。`
               : "目前尚未放圖，先點選這個圖框，再到素材區點圖片即可填入。"}
           </div>
         </div>
@@ -1213,7 +1219,7 @@ function InspectorContent({
         {selectedSlot.imageSrc && (
           <>
             <label className="field">
-              <span>框內縮放</span>
+              <span>框內圖片縮放</span>
               <input
                 type="range"
                 min="1"
@@ -1227,7 +1233,7 @@ function InspectorContent({
             </label>
 
             <label className="field">
-              <span>水平位移</span>
+              <span>框內圖片左右</span>
               <input
                 type="range"
                 min="-500"
@@ -1240,7 +1246,7 @@ function InspectorContent({
             </label>
 
             <label className="field">
-              <span>垂直位移</span>
+              <span>框內圖片上下</span>
               <input
                 type="range"
                 min="-500"
@@ -2124,28 +2130,39 @@ export default function App() {
   };
 
   const setSelectedCrop45 = () => {
-    const minSize = selectedSlot ? 80 : 40;
+    const getCurrentSlideFrame = (target, fallbackWidth, fallbackHeight) => {
+      const rotation = target.rotation || 0;
+      const center = getRotatedGeometry(
+        target.x || 0,
+        target.y || 0,
+        target.width || fallbackWidth,
+        target.height || fallbackHeight,
+        rotation
+      );
+      const slideIndex = clamp(Math.floor(center.centerX / singleW), 0, slides - 1);
+      return {
+        x: slideIndex * singleW,
+        y: 0,
+        width: singleW,
+        height: singleH,
+      };
+    };
 
     if (selectedSlot) {
       updateSelectedBox((target) => {
-        const nextWidth = Math.max(minSize, target.width || 240);
-        const nextHeight = nextWidth * 1.25;
-        const rotation = target.rotation || 0;
-        const center = getRotatedGeometry(
-          target.x || 0,
-          target.y || 0,
-          target.width || nextWidth,
-          target.height || nextHeight,
-          rotation
-        );
-        const rad = (rotation * Math.PI) / 180;
+        const frame = getCurrentSlideFrame(target, singleW, singleH);
 
         return {
           ...target,
-          x: center.centerX - (nextWidth / 2) * Math.cos(rad) + (nextHeight / 2) * Math.sin(rad),
-          y: center.centerY - (nextWidth / 2) * Math.sin(rad) - (nextHeight / 2) * Math.cos(rad),
-          width: nextWidth,
-          height: nextHeight,
+          ...frame,
+          rotation: 0,
+          radius: 0,
+          strokeWidth: 0,
+          fill: "rgba(255,255,255,0)",
+          label: "IG 4:5 裁切框",
+          imageOffsetX: 0,
+          imageOffsetY: 0,
+          imageZoom: 1,
         };
       });
       return;
@@ -2157,31 +2174,18 @@ export default function App() {
     }
 
     pushHistory();
-    const nextWidth = Math.max(80, selectedItem.width || 240);
-    const nextHeight = nextWidth * 1.25;
-    const rotation = selectedItem.rotation || 0;
-    const center = getRotatedGeometry(
-      selectedItem.x || 0,
-      selectedItem.y || 0,
-      selectedItem.width || nextWidth,
-      selectedItem.height || nextHeight,
-      rotation
-    );
-    const rad = (rotation * Math.PI) / 180;
+    const frame = getCurrentSlideFrame(selectedItem, selectedItem.width || singleW, selectedItem.height || singleH);
     const slot = createSlot({
-      x: center.centerX - (nextWidth / 2) * Math.cos(rad) + (nextHeight / 2) * Math.sin(rad),
-      y: center.centerY - (nextWidth / 2) * Math.sin(rad) - (nextHeight / 2) * Math.cos(rad),
-      width: nextWidth,
-      height: nextHeight,
-      radius: selectedItem.radius || 0,
-      stroke: selectedItem.borderColor || "#ffffff",
-      strokeWidth: Math.max(4, selectedItem.borderWidth || 0),
-      fill: "rgba(255,255,255,0.02)",
-      label: "4:5 裁切框",
+      ...frame,
+      radius: 0,
+      stroke: "#7db2ff",
+      strokeWidth: 0,
+      fill: "rgba(255,255,255,0)",
+      label: "IG 4:5 裁切框",
     });
     const nextSlot = {
       ...slot,
-      rotation,
+      rotation: 0,
       imageSrc: selectedItem.src,
       imageName: selectedItem.name || "圖片",
       imageOffsetX: 0,
