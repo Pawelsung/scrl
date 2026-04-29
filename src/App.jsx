@@ -32,6 +32,12 @@ const TEMPLATES = [
   { id: "split", name: "左右文圖" },
   { id: "frame", name: "留白框版型" },
   { id: "grid4", name: "四格拼貼" },
+  { id: "duo", name: "雙圖對照" },
+  { id: "triptych", name: "三連圖集" },
+  { id: "polaroid", name: "拍立得拼貼" },
+  { id: "quote", name: "語錄留白" },
+  { id: "product", name: "產品展示" },
+  { id: "checker", name: "棋盤拼貼" },
 ];
 
 const FONT_OPTIONS = [
@@ -1636,7 +1642,7 @@ export default function App() {
   const [slides, setSlides] = useState(3);
   const [ratioKey, setRatioKey] = useState("4:5");
   const [backgroundMode, setBackgroundMode] = useState("solid");
-  const [bgPrimary, setBgPrimary] = useState("#ffffff");
+  const [bgPrimary, setBgPrimary] = useState("#eef0f3");
   const [bgSecondary, setBgSecondary] = useState("#f3f4f6");
   const [images, setImages] = useState([]);
   const [elements, setElements] = useState([]);
@@ -2657,6 +2663,9 @@ export default function App() {
   const applyTemplate = (id) => {
     pushHistory();
     setTemplateId(id);
+    setBackgroundMode("solid");
+    setBgPrimary("#eef0f3");
+    setBgSecondary("#f3f4f6");
 
     const nextSlots = [];
     const nextManagedElements = [];
@@ -2698,7 +2707,7 @@ export default function App() {
         width: 420,
         fontSize: 72,
         fontStyle: "bold",
-        fill: "#ffffff",
+        fill: "#111827",
         align: "left",
         opacity: 1,
         isTemplateManaged: true,
@@ -2729,7 +2738,7 @@ export default function App() {
           width: canvasW * 0.36,
           fontSize: 88,
           fontStyle: "bold",
-          fill: "#ffffff",
+          fill: "#111827",
           align: "left",
           opacity: 1,
           isTemplateManaged: true,
@@ -2743,7 +2752,7 @@ export default function App() {
           width: 580,
           fontSize: 32,
           fontStyle: "normal",
-          fill: "#d1d5db",
+          fill: "#4b5563",
           align: "left",
           opacity: 0.92,
           isTemplateManaged: true,
@@ -2777,7 +2786,7 @@ export default function App() {
         width: 340,
         fontSize: 40,
         fontStyle: "bold",
-        fill: "#ffffff",
+        fill: "#111827",
         align: "left",
         opacity: 1,
         isTemplateManaged: true,
@@ -2808,7 +2817,7 @@ export default function App() {
           width: 420,
           fontSize: 84,
           fontStyle: "bold",
-          fill: "#ffffff",
+          fill: "#111827",
           align: "left",
           opacity: 1,
           isTemplateManaged: true,
@@ -2822,7 +2831,7 @@ export default function App() {
           width: 440,
           fontSize: 32,
           fontStyle: "normal",
-          fill: "#d1d5db",
+          fill: "#4b5563",
           align: "left",
           opacity: 1,
           isTemplateManaged: true,
@@ -2854,7 +2863,7 @@ export default function App() {
         width: 420,
         fontSize: 44,
         fontStyle: "bold",
-        fill: "#ffffff",
+        fill: "#111827",
         align: "left",
         opacity: 1,
         isTemplateManaged: true,
@@ -2927,11 +2936,269 @@ export default function App() {
         width: 420,
         fontSize: 40,
         fontStyle: "bold",
-        fill: "#ffffff",
+        fill: "#111827",
         align: "left",
         opacity: 1,
         isTemplateManaged: true,
       });
+    }
+
+    if (id === "duo") {
+      nextSlots.push(
+        createSlot({
+          x: 72,
+          y: 120,
+          width: singleW * 0.42,
+          height: canvasH * 0.66,
+          radius: 28,
+          stroke: "#ffffff",
+          strokeWidth: 8,
+          fill: "rgba(255,255,255,0.08)",
+          label: "Before",
+        }),
+        createSlot({
+          x: singleW * 0.52,
+          y: 120,
+          width: singleW * 0.42,
+          height: canvasH * 0.66,
+          radius: 28,
+          stroke: "#ffffff",
+          strokeWidth: 8,
+          fill: "rgba(255,255,255,0.08)",
+          label: "After",
+        })
+      );
+
+      nextManagedElements.push({
+        id: uid("text"),
+        type: "text",
+        text: "Before / After",
+        x: 82,
+        y: 52,
+        width: 520,
+        fontSize: 52,
+        fontStyle: "bold",
+        fill: "#111827",
+        align: "left",
+        opacity: 1,
+        isTemplateManaged: true,
+      });
+    }
+
+    if (id === "triptych") {
+      const gap = 22;
+      const pad = 58;
+      const slotW = (canvasW - pad * 2 - gap * 2) / 3;
+      nextSlots.push(
+        createSlot({
+          x: pad,
+          y: 150,
+          width: slotW,
+          height: canvasH * 0.68,
+          radius: 26,
+          stroke: "#ffffff",
+          strokeWidth: 8,
+          fill: "rgba(255,255,255,0.08)",
+          label: "Story 1",
+        }),
+        createSlot({
+          x: pad + slotW + gap,
+          y: 150,
+          width: slotW,
+          height: canvasH * 0.68,
+          radius: 26,
+          stroke: "#ffffff",
+          strokeWidth: 8,
+          fill: "rgba(255,255,255,0.08)",
+          label: "Story 2",
+        }),
+        createSlot({
+          x: pad + (slotW + gap) * 2,
+          y: 150,
+          width: slotW,
+          height: canvasH * 0.68,
+          radius: 26,
+          stroke: "#ffffff",
+          strokeWidth: 8,
+          fill: "rgba(255,255,255,0.08)",
+          label: "Story 3",
+        })
+      );
+
+      nextManagedElements.push({
+        id: uid("text"),
+        type: "text",
+        text: "Three Moments",
+        x: 72,
+        y: 62,
+        width: 620,
+        fontSize: 56,
+        fontStyle: "bold",
+        fill: "#111827",
+        align: "left",
+        opacity: 1,
+        isTemplateManaged: true,
+      });
+    }
+
+    if (id === "polaroid") {
+      nextSlots.push(
+        createSlot({
+          x: 88,
+          y: 118,
+          width: singleW * 0.34,
+          height: canvasH * 0.46,
+          radius: 12,
+          stroke: "#ffffff",
+          strokeWidth: 24,
+          fill: "rgba(255,255,255,0.16)",
+          label: "Photo 1",
+        }),
+        createSlot({
+          x: singleW * 0.48,
+          y: 244,
+          width: singleW * 0.36,
+          height: canvasH * 0.5,
+          radius: 12,
+          stroke: "#ffffff",
+          strokeWidth: 24,
+          fill: "rgba(255,255,255,0.16)",
+          label: "Photo 2",
+        })
+      );
+
+      nextManagedElements.push({
+        id: uid("text"),
+        type: "text",
+        text: "Weekend Notes",
+        x: 96,
+        y: canvasH * 0.73,
+        width: 620,
+        fontSize: 54,
+        fontStyle: "bold",
+        fill: "#111827",
+        align: "left",
+        opacity: 1,
+        isTemplateManaged: true,
+      });
+    }
+
+    if (id === "quote") {
+      nextSlots.push(
+        createSlot({
+          x: canvasW * 0.62,
+          y: 128,
+          width: canvasW * 0.28,
+          height: canvasH * 0.64,
+          radius: 34,
+          stroke: "#ffffff",
+          strokeWidth: 8,
+          fill: "rgba(255,255,255,0.08)",
+          label: "Portrait",
+        })
+      );
+
+      nextManagedElements.push(
+        {
+          id: uid("text"),
+          type: "text",
+          text: "A small idea,\nclearly framed.",
+          x: 96,
+          y: canvasH * 0.22,
+          width: canvasW * 0.48,
+          fontSize: 78,
+          fontStyle: "bold",
+          fill: "#111827",
+          align: "left",
+          opacity: 1,
+          isTemplateManaged: true,
+        },
+        {
+          id: uid("text"),
+          type: "text",
+          text: "Use this layout for quotes, announcements, or educational carousel openings.",
+          x: 104,
+          y: canvasH * 0.62,
+          width: canvasW * 0.42,
+          fontSize: 30,
+          fontStyle: "normal",
+          fill: "#4b5563",
+          align: "left",
+          opacity: 1,
+          isTemplateManaged: true,
+        }
+      );
+    }
+
+    if (id === "product") {
+      nextSlots.push(
+        createSlot({
+          x: canvasW * 0.12,
+          y: 112,
+          width: canvasW * 0.44,
+          height: canvasH * 0.72,
+          radius: 38,
+          stroke: "#ffffff",
+          strokeWidth: 10,
+          fill: "rgba(255,255,255,0.1)",
+          label: "Product",
+        })
+      );
+
+      nextManagedElements.push(
+        {
+          id: uid("text"),
+          type: "text",
+          text: "Product\nStory",
+          x: canvasW * 0.62,
+          y: canvasH * 0.18,
+          width: canvasW * 0.28,
+          fontSize: 76,
+          fontStyle: "bold",
+          fill: "#111827",
+          align: "left",
+          opacity: 1,
+          isTemplateManaged: true,
+        },
+        {
+          id: uid("text"),
+          type: "text",
+          text: "Feature highlight · detail · result",
+          x: canvasW * 0.62,
+          y: canvasH * 0.56,
+          width: canvasW * 0.3,
+          fontSize: 28,
+          fontStyle: "normal",
+          fill: "#4b5563",
+          align: "left",
+          opacity: 1,
+          isTemplateManaged: true,
+        }
+      );
+    }
+
+    if (id === "checker") {
+      const pad = 60;
+      const gap = 18;
+      const cellW = (canvasW - pad * 2 - gap * 2) / 3;
+      const cellH = (canvasH - pad * 2 - gap) / 2;
+      for (let row = 0; row < 2; row += 1) {
+        for (let col = 0; col < 3; col += 1) {
+          nextSlots.push(
+            createSlot({
+              x: pad + col * (cellW + gap),
+              y: pad + row * (cellH + gap),
+              width: cellW,
+              height: cellH,
+              radius: 22,
+              stroke: "#ffffff",
+              strokeWidth: 6,
+              fill: "rgba(255,255,255,0.08)",
+              label: `Photo ${row * 3 + col + 1}`,
+            })
+          );
+        }
+      }
     }
 
     setTemplateSlots(nextSlots);
