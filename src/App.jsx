@@ -70,6 +70,8 @@ const ROTATION_SNAPS = [0, 45, 90, 135, 180, 225, 270, 315];
 const SLOT_NUDGE = 24;
 const SLOT_ZOOM_STEP = 0.08;
 const STORAGE_KEY = "scrl_draft_v1";
+const DEFAULT_CANVAS_COLOR = "#d9dde3";
+const DEFAULT_CANVAS_COLOR_2 = "#eef0f3";
 
 function uid(prefix = "id") {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
@@ -1660,8 +1662,8 @@ export default function App() {
   const [slides, setSlides] = useState(3);
   const [ratioKey, setRatioKey] = useState("4:5");
   const [backgroundMode, setBackgroundMode] = useState("solid");
-  const [bgPrimary, setBgPrimary] = useState("#eef0f3");
-  const [bgSecondary, setBgSecondary] = useState("#f3f4f6");
+  const [bgPrimary, setBgPrimary] = useState(DEFAULT_CANVAS_COLOR);
+  const [bgSecondary, setBgSecondary] = useState(DEFAULT_CANVAS_COLOR_2);
   const [images, setImages] = useState([]);
   const [elements, setElements] = useState([]);
   const [templateSlots, setTemplateSlots] = useState([]);
@@ -1901,8 +1903,8 @@ export default function App() {
     setSlides(3);
     setRatioKey("4:5");
     setBackgroundMode("solid");
-    setBgPrimary("#eef0f3");
-    setBgSecondary("#f3f4f6");
+    setBgPrimary(DEFAULT_CANVAS_COLOR);
+    setBgSecondary(DEFAULT_CANVAS_COLOR_2);
     setImages([]);
     setElements([]);
     setTemplateSlots([]);
@@ -2686,8 +2688,8 @@ export default function App() {
     pushHistory();
     setTemplateId(id);
     setBackgroundMode("solid");
-    setBgPrimary("#eef0f3");
-    setBgSecondary("#f3f4f6");
+    setBgPrimary(DEFAULT_CANVAS_COLOR);
+    setBgSecondary(DEFAULT_CANVAS_COLOR_2);
 
     const nextSlots = [];
     const nextManagedElements = [];
