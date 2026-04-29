@@ -1,7 +1,7 @@
 {
-  "name": "SCRL",
-  "short_name": "SCRL",
-  "description": "Mobile-first carousel and canvas editor",
+  "name": "IG貼文切圖工具",
+  "short_name": "切圖工具",
+  "description": "IG carousel post slicing and canvas editor",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

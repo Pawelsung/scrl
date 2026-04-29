@@ -1567,6 +1567,7 @@ export default function App() {
 
   const selectedItem = elements.find((el) => el.id === selectedId) || null;
   const selectedSlot = templateSlots.find((slot) => slot.id === selectedSlotId) || null;
+  const mobileWorkspaceReserve = isMobile ? (selectedItem || selectedSlot ? 230 : 170) : 0;
   const registerSelectableNode = useCallback((kind, id, node) => {
     const key = `${kind}:${id}`;
     if (node) {
@@ -1855,9 +1856,9 @@ export default function App() {
     const pad = isMobile ? 16 : 32;
     const fitWidth = isMobile ? singleW * Math.min(slides, 2) : canvasW;
     const usableW = Math.max(260, containerSize.w - pad);
-    const usableH = Math.max(220, containerSize.h - pad);
+    const usableH = Math.max(220, containerSize.h - mobileWorkspaceReserve - pad);
     return Math.min(usableW / fitWidth, usableH / canvasH, 1);
-  }, [containerSize, canvasW, canvasH, isMobile, singleW, slides]);
+  }, [containerSize, canvasW, canvasH, isMobile, mobileWorkspaceReserve, singleW, slides]);
 
   const displayScale = fitScale * userZoom;
   const mobileVisibleSlideCount = Math.min(slides, 2);
@@ -1906,7 +1907,7 @@ export default function App() {
     const scaledW = canvasW * fitScale * zoom;
     const scaledH = canvasH * fitScale * zoom;
     const viewportW = containerSize.w;
-    const viewportH = containerSize.h;
+    const viewportH = isMobile ? Math.max(220, containerSize.h - mobileWorkspaceReserve) : containerSize.h;
     const pad = isMobile ? 10 : 24;
 
     const horizontalSlack = Math.max(0, viewportW - scaledW - pad * 2);
@@ -1915,8 +1916,15 @@ export default function App() {
     const minX = scaledW + pad * 2 <= viewportW ? pad + horizontalSlack / 2 : viewportW - scaledW - pad;
     const maxX = scaledW + pad * 2 <= viewportW ? pad + horizontalSlack / 2 : pad;
 
-    const minY = scaledH + pad * 2 <= viewportH ? pad + verticalSlack / 2 : viewportH - scaledH - pad;
-    const maxY = scaledH + pad * 2 <= viewportH ? pad + verticalSlack / 2 : pad;
+    const centeredY = pad + verticalSlack / 2;
+    const mobileFreeUp = isMobile ? Math.max(84, mobileWorkspaceReserve * 0.42) : 0;
+    const mobileFreeDown = isMobile ? 42 : 0;
+    const minY = scaledH + pad * 2 <= viewportH
+      ? centeredY - mobileFreeUp
+      : viewportH - scaledH - pad;
+    const maxY = scaledH + pad * 2 <= viewportH
+      ? centeredY + mobileFreeDown
+      : pad;
 
     return {
       x: clamp(nextX, Math.min(minX, maxX), Math.max(minX, maxX)),
@@ -1926,7 +1934,7 @@ export default function App() {
 
   useEffect(() => {
     setPan((prev) => clampPan(prev.x, prev.y, userZoom));
-  }, [fitScale, containerSize.w, containerSize.h, isMobile, userZoom]);
+  }, [fitScale, containerSize.w, containerSize.h, isMobile, mobileWorkspaceReserve, userZoom]);
 
   const resetView = () => {
     setUserZoom(1);
@@ -3347,7 +3355,7 @@ export default function App() {
         <div className="canvas-panel">
           <div className="canvas-toolbar">
             <div>
-              <strong>SCRL Studio</strong>
+              <strong>IG貼文切圖工具</strong>
               <span className="sub">
                 手機：選到圖片 / 貼紙 / 圖框後，雙指 pinch 會縮放物件；空白處雙指 pinch 才縮放畫布
               </span>
