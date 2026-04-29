@@ -1601,7 +1601,7 @@ function DesktopInspectorPanel({
           <div className="desktop-layer-actions">
             <button className="ghost" onClick={onSendBackward}>下移</button>
             <button className="ghost" onClick={onBringForward}>上移</button>
-            {!!selectedItem && <button className="ghost" onClick={onDuplicate}>複製</button>}
+            <button className="ghost" onClick={onDuplicate}>複製</button>
             <button className="ghost danger" onClick={onRemove}>刪除</button>
             <button className="ghost" onClick={onClearSelection}>取消</button>
           </div>
@@ -2118,8 +2118,29 @@ export default function App() {
     setSelectedSlotId(null);  };
 
   const duplicateSelected = () => {
-    if (!selectedItem) return;
+    if (!selectedItem && !selectedSlot) return;
     pushHistory();
+
+    if (selectedSlot) {
+      const clone = {
+        ...selectedSlot,
+        id: uid("slot"),
+        x: selectedSlot.x + 32,
+        y: selectedSlot.y + 32,
+      };
+      setTemplateSlots((prev) => [...prev, clone]);
+      setLayerOrder((prev) => {
+        const order = normalizeLayerOrder(prev, elements, templateSlots);
+        const idx = order.findIndex((entry) => entry.kind === "slot" && entry.id === selectedSlot.id);
+        const nextEntry = { kind: "slot", id: clone.id };
+        if (idx < 0) return [...order, nextEntry];
+        return [...order.slice(0, idx + 1), nextEntry, ...order.slice(idx + 1)];
+      });
+      setSelectedId(null);
+      setSelectedSlotId(clone.id);
+      return;
+    }
+
     const clone = {
       ...selectedItem,
       id: uid(selectedItem.type),
@@ -2128,7 +2149,13 @@ export default function App() {
       isTemplateManaged: false,
     };
     setElements((prev) => [...prev, clone]);
-    setLayerOrder((prev) => [...normalizeLayerOrder(prev, elements, templateSlots), { kind: "element", id: clone.id }]);
+    setLayerOrder((prev) => {
+      const order = normalizeLayerOrder(prev, elements, templateSlots);
+      const idx = order.findIndex((entry) => entry.kind === "element" && entry.id === selectedItem.id);
+      const nextEntry = { kind: "element", id: clone.id };
+      if (idx < 0) return [...order, nextEntry];
+      return [...order.slice(0, idx + 1), nextEntry, ...order.slice(idx + 1)];
+    });
     setSelectedId(clone.id);
     setSelectedSlotId(null);
   };
