@@ -295,7 +295,7 @@ button.danger {
 
 .asset-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -726,30 +726,58 @@ button.danger {
   }
 
   .canvas-toolbar {
-    padding: 12px 12px 10px;
+    padding: 8px 10px;
     min-height: auto;
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 10px;
+    align-items: center;
+    flex-direction: row;
+    gap: 8px;
   }
 
   .canvas-toolbar > div:first-child {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    display: none;
   }
 
   .toolbar-actions {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: minmax(94px, 1fr) 34px 34px minmax(58px, 0.7fr);
+    gap: 6px;
+    align-items: center;
   }
 
   .toolbar-actions button {
     width: 100%;
-    padding: 11px 8px;
+    min-height: 32px;
+    padding: 6px 6px;
     min-width: 0;
+    border-radius: 8px;
+    font-size: 12px;
+  }
+
+  .toolbar-actions .mobile-icon-btn {
+    font-size: 17px;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .toolbar-actions .export-quality-control {
+    grid-column: auto;
+    order: 0;
+    min-width: 0;
+    width: 100%;
+    padding: 4px 6px;
+    border-radius: 8px;
+  }
+
+  .toolbar-actions .export-quality-control span {
+    display: none;
+  }
+
+  .toolbar-actions .export-quality-control select {
+    min-width: 0;
+    width: 100%;
+    font-size: 12px;
+    padding: 2px 0;
   }
 
   .canvas-stage-wrap {
@@ -931,7 +959,7 @@ button.danger {
   }
 
   .asset-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -1899,7 +1927,7 @@ button.danger {
     gap: 6px;
   }
 
-  .export-quality-control {
+  .mobile-bottom-dock .export-quality-control {
     grid-column: 1 / -1;
     order: 10;
     width: 100%;
@@ -1907,7 +1935,7 @@ button.danger {
     overflow: hidden;
   }
 
-  .export-quality-control select {
+  .mobile-bottom-dock .export-quality-control select {
     min-width: 0;
     flex: 1;
     font-size: 13px;

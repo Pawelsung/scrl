@@ -77,7 +77,15 @@ export default function MobileDrawer({
 
               <div style={{ height: 16 }} />
 
-              <h2>貼紙</h2>
+              <h2>元素</h2>
+              <div className="button-row asset-tool-row">
+                <button type="button" className="ghost" onClick={projectPanelProps.onAddFrame}>
+                  新增圖框
+                </button>
+                <button type="button" className="ghost" onClick={projectPanelProps.onAddText}>
+                  新增文字
+                </button>
+              </div>
               {stickers.length ? (
                 <div className="asset-grid">
                   {stickers.map((sticker) => (

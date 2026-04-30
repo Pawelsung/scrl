@@ -65,9 +65,6 @@ export default function ProjectPanel({
         <button type="button" className="ghost" onClick={onAddText}>
           新增文字
         </button>
-        <button type="button" className="ghost" onClick={onAddFrame}>
-          新增圖框
-        </button>
         <button type="button" className="ghost" onClick={onExportJson}>
           匯出 JSON
         </button>
@@ -157,12 +154,6 @@ export default function ProjectPanel({
         <button type="button" onClick={onUploadImages}>
           上傳圖片
         </button>
-        <button type="button" className="ghost" onClick={onAddFrame}>
-          新增圖框
-        </button>
-        <button type="button" className="ghost" onClick={onAddText}>
-          新增文字
-        </button>
       </div>
       {assets.length ? (
         <div className="asset-grid">
@@ -184,7 +175,15 @@ export default function ProjectPanel({
 
       <div className="panel-section-divider" />
 
-      <h2>貼紙</h2>
+      <h2>元素</h2>
+      <div className="button-row asset-tool-row">
+        <button type="button" className="ghost" onClick={onAddFrame}>
+          新增圖框
+        </button>
+        <button type="button" className="ghost" onClick={onAddText}>
+          新增文字
+        </button>
+      </div>
       {stickers.length ? (
         <div className="asset-grid">
           {stickers.map((sticker) => (

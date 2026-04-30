@@ -1766,8 +1766,10 @@ export default function App() {
   const registerSelectableNode = useCallback((kind, id, node) => {
     const key = `${kind}:${id}`;
     if (node) {
+      if (selectableNodesRef.current.get(key) === node) return;
       selectableNodesRef.current.set(key, node);
     } else {
+      if (!selectableNodesRef.current.has(key)) return;
       selectableNodesRef.current.delete(key);
     }
     setSelectableNodeRevision((value) => value + 1);
@@ -4096,11 +4098,8 @@ export default function App() {
 
               {isMobile && (
                 <>
-                  <button className="ghost" onClick={undo}>復原</button>
-                  <button className="ghost" onClick={redo}>重做</button>
-                  <button type="button" className="ghost" onClick={clearSelection}>取消</button>
-                  <button type="button" className="ghost danger" onClick={removeSelected}>刪除</button>
-                  <button type="button" className="ghost" onClick={clearSavedDraft}>清稿</button>
+                  <button className="ghost mobile-icon-btn" onClick={undo}>↶</button>
+                  <button className="ghost mobile-icon-btn" onClick={redo}>↷</button>
                   <button onClick={() => {
                     refreshPreviews({ reveal: true });
                     setMobileTab("preview");
