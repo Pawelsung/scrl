@@ -1298,8 +1298,23 @@ function InspectorContent({
   setShowGuides,
   showGuides,
 }) {
+  const guidesButton = (
+    <div className="inspector-section">
+      <div className="inspector-section__title">輔助</div>
+      <div className="button-row">
+        <button className="ghost" onClick={() => setShowGuides((v) => !v)}>
+          {showGuides ? "隱藏參考線" : "顯示參考線"}
+        </button>
+      </div>
+    </div>
+  );
+
   if (!selectedItem && !selectedSlot) {
-    return <div className="hint-card">點一下畫布中的圖片、文字、貼紙或模板圖框。若想操作畫布本身，請先按「取消選取」。</div>;
+    return (
+      <div className="hint-card">
+        先選模板、上傳圖片，再點圖框填入。選取畫布物件後，這裡會顯示對應工具。
+      </div>
+    );
   }
 
   if (selectedSlot) {
@@ -1314,39 +1329,43 @@ function InspectorContent({
           </div>
         </div>
 
-        <label className="field">
-          <span>圓角</span>
-          <input
-            type="range"
-            min="0"
-            max="120"
-            value={selectedSlot.radius || 0}
-            onChange={(e) => updateSlot({ ...selectedSlot, radius: Number(e.target.value) })}
-          />
-        </label>
+        <div className="inspector-section">
+          <div className="inspector-section__title">外框</div>
+          <label className="field">
+            <span>圓角</span>
+            <input
+              type="range"
+              min="0"
+              max="120"
+              value={selectedSlot.radius || 0}
+              onChange={(e) => updateSlot({ ...selectedSlot, radius: Number(e.target.value) })}
+            />
+          </label>
 
-        <label className="field">
-          <span>框線粗細</span>
-          <input
-            type="range"
-            min="0"
-            max="30"
-            value={selectedSlot.strokeWidth || 0}
-            onChange={(e) => updateSlot({ ...selectedSlot, strokeWidth: Number(e.target.value) })}
-          />
-        </label>
+          <label className="field">
+            <span>框線粗細</span>
+            <input
+              type="range"
+              min="0"
+              max="30"
+              value={selectedSlot.strokeWidth || 0}
+              onChange={(e) => updateSlot({ ...selectedSlot, strokeWidth: Number(e.target.value) })}
+            />
+          </label>
 
-        <label className="field">
-          <span>框線顏色</span>
-          <input
-            type="color"
-            value={selectedSlot.stroke || "#ffffff"}
-            onChange={(e) => updateSlot({ ...selectedSlot, stroke: e.target.value })}
-          />
-        </label>
+          <label className="field">
+            <span>框線顏色</span>
+            <input
+              type="color"
+              value={selectedSlot.stroke || "#ffffff"}
+              onChange={(e) => updateSlot({ ...selectedSlot, stroke: e.target.value })}
+            />
+          </label>
+        </div>
 
         {selectedSlot.imageSrc && (
-          <>
+          <div className="inspector-section">
+            <div className="inspector-section__title">框內圖片</div>
             <label className="field">
               <span>框內圖片縮放</span>
               <input
@@ -1406,14 +1425,10 @@ function InspectorContent({
                 清空圖框圖片
               </button>
             </div>
-          </>
+          </div>
         )}
 
-        <div className="button-row">
-          <button className="ghost" onClick={() => setShowGuides((v) => !v)}>
-            {showGuides ? "隱藏參考線" : "顯示參考線"}
-          </button>
-        </div>
+        {guidesButton}
       </>
     );
   }
@@ -1421,7 +1436,8 @@ function InspectorContent({
   return (
     <>
       {selectedItem?.type === "image" && (
-        <>
+        <div className="inspector-section">
+          <div className="inspector-section__title">圖片外觀</div>
           <label className="field">
             <span>圓角</span>
             <input
@@ -1473,11 +1489,12 @@ function InspectorContent({
               onChange={(e) => updateElement({ ...selectedItem, borderColor: e.target.value })}
             />
           </label>
-        </>
+        </div>
       )}
 
       {selectedItem?.type === "text" && (
-        <>
+        <div className="inspector-section">
+          <div className="inspector-section__title">文字</div>
           <label className="field">
             <span>文字內容</span>
             <textarea
@@ -1539,11 +1556,12 @@ function InspectorContent({
               <option value="right">right</option>
             </select>
           </label>
-        </>
+        </div>
       )}
 
       {selectedItem?.type === "sticker" && (
-        <>
+        <div className="inspector-section">
+          <div className="inspector-section__title">貼紙</div>
           <label className="field">
             <span>顏色</span>
             <input
@@ -1563,14 +1581,10 @@ function InspectorContent({
               onChange={(e) => updateElement({ ...selectedItem, opacity: Number(e.target.value) })}
             />
           </label>
-        </>
+        </div>
       )}
 
-      <div className="button-row">
-        <button className="ghost" onClick={() => setShowGuides((v) => !v)}>
-          {showGuides ? "隱藏參考線" : "顯示參考線"}
-        </button>
-      </div>
+      {guidesButton}
     </>
   );
 }
@@ -1597,13 +1611,20 @@ function DesktopInspectorPanel({
 
       {hasSelection && (
         <>
-          <SelectionQuickControls actions={selectedActions} />
-          <div className="desktop-layer-actions">
-            <button className="ghost" onClick={onSendBackward}>下移</button>
-            <button className="ghost" onClick={onBringForward}>上移</button>
-            <button className="ghost" onClick={onDuplicate}>複製</button>
-            <button className="ghost danger" onClick={onRemove}>刪除</button>
-            <button className="ghost" onClick={onClearSelection}>取消</button>
+          <div className="inspector-section">
+            <div className="inspector-section__title">快速操作</div>
+            <SelectionQuickControls actions={selectedActions} />
+          </div>
+
+          <div className="inspector-section">
+            <div className="inspector-section__title">圖層與物件</div>
+            <div className="desktop-layer-actions">
+              <button className="ghost" onClick={onSendBackward}>下移</button>
+              <button className="ghost" onClick={onBringForward}>上移</button>
+              <button className="ghost" onClick={onDuplicate}>複製</button>
+              <button className="ghost danger" onClick={onRemove}>刪除</button>
+              <button className="ghost" onClick={onClearSelection}>取消</button>
+            </div>
           </div>
         </>
       )}

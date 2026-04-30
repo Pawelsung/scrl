@@ -106,6 +106,41 @@ textarea {
   background: var(--line-soft);
 }
 
+.workflow-steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0 0 14px;
+}
+
+.workflow-steps span {
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.inspector-section {
+  padding: 12px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.inspector-section:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.inspector-section__title {
+  margin: 0 0 10px;
+  color: #d9e0ea;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .field {
   display: grid;
   gap: 8px;
@@ -893,6 +928,79 @@ button.danger {
 
   .asset-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) and (prefers-color-scheme: light) {
+  :root {
+    --bg: #eef1f5;
+    --panel: #ffffff;
+    --panel-2: #f6f8fb;
+    --line: #d8dee8;
+    --line-soft: rgba(17, 24, 39, 0.08);
+    --text: #111827;
+    --muted: #5d6675;
+    --shadow: 0 10px 26px rgba(17, 24, 39, 0.12);
+  }
+
+  .app-shell {
+    background: var(--bg);
+  }
+
+  .canvas-stage-wrap {
+    background: #dfe4ea;
+  }
+
+  .canvas-panel,
+  .preview-panel,
+  .panel,
+  .mobile-drawer,
+  .bottom-asset-tray,
+  .mobile-bottom-dock .mobile-bottom-bar,
+  .mobile-dock-actions,
+  .mobile-crop-pad {
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--text);
+  }
+
+  .mobile-bottom-bar,
+  .mobile-tabbar,
+  .mobile-quick-bar {
+    background: rgba(255, 255, 255, 0.96);
+  }
+
+  button.ghost,
+  .template-btn,
+  .asset-btn,
+  .field input,
+  .field select,
+  .field textarea,
+  .hint-card,
+  .workflow-steps span {
+    background: #f6f8fb;
+    color: var(--text);
+    border-color: var(--line);
+  }
+
+  .mobile-selection-chip,
+  .rotation-hud {
+    background: rgba(255, 255, 255, 0.92);
+    color: #1f2937;
+    border-color: rgba(59, 116, 242, 0.24);
+  }
+
+  .bottom-asset-tray__title strong,
+  .panel h2,
+  .inspector-section__title,
+  .mobile-dock-section__head span {
+    color: #111827;
+  }
+
+  .bottom-asset-tray__title span,
+  .sub,
+  .field span,
+  .mobile-zoom-readout {
+    color: #5d6675;
   }
 }
 

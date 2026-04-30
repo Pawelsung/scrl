@@ -67,7 +67,7 @@ export default function MobileDrawer({
                       className="asset-btn"
                       onClick={() => onAddAssetToCanvas(asset)}
                     >
-                      <img src={asset.src} alt={asset.name || "asset"} />
+                      <img src={asset.thumbSrc || asset.src} alt={asset.name || "asset"} />
                     </button>
                   ))}
                 </div>

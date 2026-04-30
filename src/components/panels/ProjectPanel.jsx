@@ -20,6 +20,13 @@ export default function ProjectPanel({
     <section className={panelClassName}>
       <h2>專案</h2>
 
+      <div className="workflow-steps" aria-label="建議工作流程">
+        <span>選模板</span>
+        <span>上傳圖片</span>
+        <span>填入圖框</span>
+        <span>預覽匯出</span>
+      </div>
+
       <label className="field">
         <span>輪播張數</span>
         <input
