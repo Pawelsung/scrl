@@ -1688,6 +1688,8 @@ export default function App() {
   const [liveGuides, setLiveGuides] = useState({ vertical: [], horizontal: [] });
   const selectableNodesRef = useRef(new Map());
   const [selectableNodeRevision, setSelectableNodeRevision] = useState(0);
+  const liveGuidesRef = useRef(liveGuides);
+  const liveGuidesRafRef = useRef(null);
 
   const [historyPast, setHistoryPast] = useState([]);
   const [historyFuture, setHistoryFuture] = useState([]);
@@ -2215,9 +2217,46 @@ export default function App() {
     setTemplateSlots((prev) => prev.map((slot) => (slot.id === next.id ? next : slot)));
   };
 
+  const updateLiveGuides = useCallback(
+    (next) => {
+      const current = liveGuidesRef.current;
+      const sameVertical =
+        current.vertical.length === next.vertical.length &&
+        current.vertical.every((value, index) => value === next.vertical[index]);
+      const sameHorizontal =
+        current.horizontal.length === next.horizontal.length &&
+        current.horizontal.every((value, index) => value === next.horizontal[index]);
+      if (sameVertical && sameHorizontal) return;
+
+      const apply = () => {
+        liveGuidesRef.current = next;
+        setLiveGuides(next);
+      };
+
+      if (!isMobile) {
+        apply();
+        return;
+      }
+
+      if (liveGuidesRafRef.current) cancelAnimationFrame(liveGuidesRafRef.current);
+      liveGuidesRafRef.current = requestAnimationFrame(() => {
+        liveGuidesRafRef.current = null;
+        apply();
+      });
+    },
+    [isMobile]
+  );
+
   useEffect(() => {
-    setLiveGuides({ vertical: [], horizontal: [] });
-  }, [selectedId, selectedSlotId]);
+    updateLiveGuides({ vertical: [], horizontal: [] });
+  }, [selectedId, selectedSlotId, updateLiveGuides]);
+
+  useEffect(
+    () => () => {
+      if (liveGuidesRafRef.current) cancelAnimationFrame(liveGuidesRafRef.current);
+    },
+    []
+  );
 
   const nudgeSelectedSlot = (dxDir, dyDir) => {
     if (!selectedSlot) return;
@@ -4151,7 +4190,7 @@ export default function App() {
 	                              onInteractionChange={setObjectInteracting}
                               pushHistory={pushHistory}
                               registerSelectableNode={registerSelectableNode}
-                              onSnapChange={setLiveGuides}
+                              onSnapChange={updateLiveGuides}
                             />
                           );
                         }
@@ -4180,7 +4219,7 @@ export default function App() {
 	                              onInteractionChange={setObjectInteracting}
                               pushHistory={pushHistory}
                               registerSelectableNode={registerSelectableNode}
-                              onSnapChange={setLiveGuides}
+                              onSnapChange={updateLiveGuides}
                             />
                           );
                         }
@@ -4204,7 +4243,7 @@ export default function App() {
 	                              onInteractionChange={setObjectInteracting}
                               pushHistory={pushHistory}
                               registerSelectableNode={registerSelectableNode}
-                              onSnapChange={setLiveGuides}
+                              onSnapChange={updateLiveGuides}
                             />
                           );
                         }
@@ -4229,7 +4268,7 @@ export default function App() {
 	                              onInteractionChange={setObjectInteracting}
                               pushHistory={pushHistory}
                               registerSelectableNode={registerSelectableNode}
-                              onSnapChange={setLiveGuides}
+                              onSnapChange={updateLiveGuides}
                             />
                           );
                         }

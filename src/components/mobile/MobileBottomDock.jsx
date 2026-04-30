@@ -20,43 +20,54 @@ export default function MobileBottomDock({
       {(selectedActions?.hasSelection || onClearSelection) && (
         <div className="mobile-dock-actions">
           {selectedActions?.hasSelection && (
-            <div className="mobile-dock-group">
-              <span className="mobile-dock-label">
-                {selectedActions.isCropSlot ? "裁切框" : "物件"}
-              </span>
-              <button type="button" className="ghost" onClick={selectedActions.onScaleDown}>
-                -
-              </button>
-              <button type="button" className="ghost" onClick={selectedActions.onScaleUp}>
-                +
-              </button>
-              <button type="button" className="ghost" onClick={selectedActions.onNudgeUp}>
-                ↑
-              </button>
-              <button type="button" className="ghost" onClick={selectedActions.onNudgeLeft}>
-                ←
-              </button>
-              <button type="button" className="ghost" onClick={selectedActions.onNudgeDown}>
-                ↓
-              </button>
-              <button type="button" className="ghost" onClick={selectedActions.onNudgeRight}>
-                →
-              </button>
-              <button type="button" className="ghost" onClick={selectedActions.onFit45}>
-                {selectedActions.fitLabel || "單張4:5"}
-              </button>
-              <button type="button" className="ghost" onClick={selectedActions.onSpanTwoSlides}>
-                {selectedActions.spanLabel || "跨兩張輪播"}
-              </button>
-              <button type="button" className="ghost" onClick={selectedActions.onRotate90}>
-                {selectedActions.rotateLabel || "旋轉90"}
-              </button>
+            <div className="mobile-dock-section">
+              <div className="mobile-dock-section__head">
+                <span>{selectedActions.isCropSlot ? "裁切框" : "物件"}</span>
+                <button type="button" className="ghost" onClick={onClearSelection}>
+                  完成
+                </button>
+              </div>
+
+              <div className="mobile-dock-row mobile-dock-row--primary">
+                <button type="button" className="ghost" onClick={selectedActions.onScaleDown}>
+                  縮小
+                </button>
+                <button type="button" className="ghost" onClick={selectedActions.onScaleUp}>
+                  放大
+                </button>
+                <button type="button" className="ghost" onClick={selectedActions.onRotate90}>
+                  {selectedActions.rotateLabel || "旋轉90"}
+                </button>
+              </div>
+
+              <div className="mobile-dock-row mobile-dock-row--nudge">
+                <button type="button" className="ghost" onClick={selectedActions.onNudgeUp}>
+                  ↑
+                </button>
+                <button type="button" className="ghost" onClick={selectedActions.onNudgeLeft}>
+                  ←
+                </button>
+                <button type="button" className="ghost" onClick={selectedActions.onNudgeDown}>
+                  ↓
+                </button>
+                <button type="button" className="ghost" onClick={selectedActions.onNudgeRight}>
+                  →
+                </button>
+              </div>
+
+              <div className="mobile-dock-row mobile-dock-row--primary">
+                <button type="button" className="ghost" onClick={selectedActions.onFit45}>
+                  {selectedActions.fitLabel || "單張4:5"}
+                </button>
+                <button type="button" className="ghost" onClick={selectedActions.onSpanTwoSlides}>
+                  {selectedActions.spanLabel || "跨兩張輪播"}
+                </button>
+              </div>
             </div>
           )}
 
           {selectedActions?.hasSelection && selectedActions.canReorder && (
-            <div className="mobile-dock-group">
-              <span className="mobile-dock-label">圖層</span>
+            <div className="mobile-dock-row mobile-dock-row--layer">
               <button type="button" className="ghost" onClick={selectedActions.onSendBackward}>
                 下移
               </button>
@@ -72,12 +83,6 @@ export default function MobileBottomDock({
                 刪除
               </button>
             </div>
-          )}
-
-          {selectedActions?.hasSelection && (
-            <button type="button" className="ghost" onClick={onClearSelection}>
-              取消
-            </button>
           )}
         </div>
       )}
