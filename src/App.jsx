@@ -2672,6 +2672,30 @@ export default function App() {
     if (isMobile) setMobileDrawerOpen(false);
   };
 
+  const addFrame = () => {
+    pushHistory();
+
+    const frameW = Math.min(singleW * 0.72, canvasW * 0.42);
+    const frameH = frameW * 1.25;
+    const slot = createSlot({
+      x: Math.max(32, canvasW / 2 - frameW / 2),
+      y: Math.max(32, canvasH / 2 - frameH / 2),
+      width: frameW,
+      height: frameH,
+      radius: 24,
+      stroke: "#ffffff",
+      strokeWidth: 8,
+      fill: "rgba(255,255,255,0.08)",
+      label: "自訂圖框",
+    });
+
+    setTemplateSlots((prev) => [...prev, slot]);
+    setLayerOrder((prev) => [...normalizeLayerOrder(prev, elements, templateSlots), { kind: "slot", id: slot.id }]);
+    setSelectedId(null);
+    setSelectedSlotId(slot.id);
+    if (isMobile) setMobileDrawerOpen(false);
+  };
+
   const addSticker = (type) => {
     pushHistory();
 
@@ -3931,6 +3955,7 @@ export default function App() {
 
   const handleUploadImages = () => fileRef.current?.click();
   const handleAddText = () => addText();
+  const handleAddFrame = () => addFrame();
   const handleExportJson = () => exportProject();
   const handleImportJson = () => importRef.current?.click();
   const handleTemplateSelect = (id) => applyTemplate(id);
@@ -3970,6 +3995,7 @@ export default function App() {
     setProject: setProjectPanelProject,
     onUploadImages: handleUploadImages,
     onAddText: handleAddText,
+    onAddFrame: handleAddFrame,
     onExportJson: handleExportJson,
     onImportJson: handleImportJson,
     assets: images,

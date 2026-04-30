@@ -41,10 +41,10 @@ export default function MobileBottomDock({
 
               <div className="mobile-dock-row mobile-dock-row--primary">
                 <button type="button" className="ghost" onClick={selectedActions.onScaleDown}>
-                  縮小
+                  -
                 </button>
                 <button type="button" className="ghost" onClick={selectedActions.onScaleUp}>
-                  放大
+                  +
                 </button>
                 <button type="button" className="ghost" onClick={selectedActions.onRotate90}>
                   {selectedActions.rotateLabel || "旋轉90"}
