@@ -1374,6 +1374,11 @@ button.danger {
   gap: 8px;
 }
 
+.mobile-dock-head-actions {
+  display: flex;
+  gap: 6px;
+}
+
 .mobile-dock-section__head span {
   color: #d9e0ea;
   font-size: 12px;

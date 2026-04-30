@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import MobileBottomBar from "./MobileBottomBar";
 import BottomAssetTray from "./BottomAssetTray";
 
@@ -13,6 +13,8 @@ export default function MobileBottomDock({
   selectedActions,
   onClearSelection,
 }) {
+  const [showMoreActions, setShowMoreActions] = useState(false);
+
   if (hidden) return null;
 
   return (
@@ -23,9 +25,18 @@ export default function MobileBottomDock({
             <div className="mobile-dock-section">
               <div className="mobile-dock-section__head">
                 <span>{selectedActions.isCropSlot ? "裁切框" : "物件"}</span>
-                <button type="button" className="ghost" onClick={onClearSelection}>
-                  完成
-                </button>
+                <div className="mobile-dock-head-actions">
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={() => setShowMoreActions((value) => !value)}
+                  >
+                    {showMoreActions ? "收合" : "更多"}
+                  </button>
+                  <button type="button" className="ghost" onClick={onClearSelection}>
+                    完成
+                  </button>
+                </div>
               </div>
 
               <div className="mobile-dock-row mobile-dock-row--primary">
@@ -40,33 +51,37 @@ export default function MobileBottomDock({
                 </button>
               </div>
 
-              <div className="mobile-dock-row mobile-dock-row--nudge">
-                <button type="button" className="ghost" onClick={selectedActions.onNudgeUp}>
-                  ↑
-                </button>
-                <button type="button" className="ghost" onClick={selectedActions.onNudgeLeft}>
-                  ←
-                </button>
-                <button type="button" className="ghost" onClick={selectedActions.onNudgeDown}>
-                  ↓
-                </button>
-                <button type="button" className="ghost" onClick={selectedActions.onNudgeRight}>
-                  →
-                </button>
-              </div>
+              {showMoreActions && (
+                <>
+                  <div className="mobile-dock-row mobile-dock-row--nudge">
+                    <button type="button" className="ghost" onClick={selectedActions.onNudgeUp}>
+                      ↑
+                    </button>
+                    <button type="button" className="ghost" onClick={selectedActions.onNudgeLeft}>
+                      ←
+                    </button>
+                    <button type="button" className="ghost" onClick={selectedActions.onNudgeDown}>
+                      ↓
+                    </button>
+                    <button type="button" className="ghost" onClick={selectedActions.onNudgeRight}>
+                      →
+                    </button>
+                  </div>
 
-              <div className="mobile-dock-row mobile-dock-row--primary">
-                <button type="button" className="ghost" onClick={selectedActions.onFit45}>
-                  {selectedActions.fitLabel || "單張4:5"}
-                </button>
-                <button type="button" className="ghost" onClick={selectedActions.onSpanTwoSlides}>
-                  {selectedActions.spanLabel || "跨兩張輪播"}
-                </button>
-              </div>
+                  <div className="mobile-dock-row mobile-dock-row--primary">
+                    <button type="button" className="ghost" onClick={selectedActions.onFit45}>
+                      {selectedActions.fitLabel || "單張4:5"}
+                    </button>
+                    <button type="button" className="ghost" onClick={selectedActions.onSpanTwoSlides}>
+                      {selectedActions.spanLabel || "跨兩張輪播"}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
-          {selectedActions?.hasSelection && selectedActions.canReorder && (
+          {showMoreActions && selectedActions?.hasSelection && selectedActions.canReorder && (
             <div className="mobile-dock-row mobile-dock-row--layer">
               <button type="button" className="ghost" onClick={selectedActions.onSendBackward}>
                 下移
