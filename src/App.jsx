@@ -3833,10 +3833,26 @@ export default function App() {
     if (next.backgroundColor2 !== undefined) setBgSecondary(next.backgroundColor2);
   };
 
+  const templateDescriptions = {
+    blank: "從空白輪播開始",
+    magazine: "封面照與標題留白",
+    cover: "大型主視覺開場",
+    film: "每張一格照片日記",
+    split: "左文右圖說明",
+    frame: "單張大圖白框",
+    grid4: "四宮格拼貼",
+    duo: "前後對照或比較",
+    triptych: "三段式故事",
+    polaroid: "生活感照片拼貼",
+    quote: "語錄與人物照",
+    product: "商品主圖與賣點",
+    checker: "多圖作品集",
+  };
+
   const projectPanelTemplates = TEMPLATES.map((t) => ({
     id: t.id,
     name: t.name,
-    description: "",
+    description: templateDescriptions[t.id] || "",
   }));
 
   const projectPanelStickers = STICKERS.map((st) => ({

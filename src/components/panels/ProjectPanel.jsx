@@ -65,7 +65,7 @@ export default function ProjectPanel({
         </button>
       </div>
 
-      <div style={{ height: 16 }} />
+      <div className="panel-section-divider" />
 
       <h2>背景</h2>
 
@@ -116,7 +116,7 @@ export default function ProjectPanel({
         </label>
       </div>
 
-      <div style={{ height: 16 }} />
+      <div className="panel-section-divider" />
 
       <h2>模板</h2>
       <div className="template-grid">
@@ -139,7 +139,7 @@ export default function ProjectPanel({
         ))}
       </div>
 
-      <div style={{ height: 16 }} />
+      <div className="panel-section-divider" />
 
       <h2>素材</h2>
       {assets.length ? (
@@ -152,7 +152,7 @@ export default function ProjectPanel({
               onClick={() => onAddAssetToCanvas(asset)}
               title={asset.name || "asset"}
             >
-              <img src={asset.src} alt={asset.name || "asset"} />
+              <img src={asset.thumbSrc || asset.src} alt={asset.name || "asset"} />
             </button>
           ))}
         </div>
@@ -160,7 +160,7 @@ export default function ProjectPanel({
         <div className="hint-card">先上傳圖片，再把縮圖加入畫布。</div>
       )}
 
-      <div style={{ height: 16 }} />
+      <div className="panel-section-divider" />
 
       <h2>貼紙</h2>
       {stickers.length ? (
