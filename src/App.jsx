@@ -3496,28 +3496,6 @@ export default function App() {
     if (reveal) setPreviewExpandSignal((value) => value + 1);
   };
 
-  useEffect(() => {
-    if (isMobile) return;
-    if (isInteractingRef.current) return;
-
-    const timer = setTimeout(() => {
-      refreshPreviews();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [
-    elements,
-    templateSlots,
-    layerOrder,
-    slides,
-    ratioKey,
-    bgPrimary,
-    bgSecondary,
-    backgroundMode,
-    isInteracting,
-    isMobile,
-  ]);
-
   const downloadDataUrl = (dataUrl, filename) => {
     const a = document.createElement("a");
     a.href = dataUrl;
