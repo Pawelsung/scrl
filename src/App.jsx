@@ -1210,23 +1210,15 @@ function SelectionQuickControls({ actions, compact = false }) {
 
   return (
     <div className={`selection-quick-controls ${compact ? "compact" : ""}`}>
-      <div className="quick-control-group">
-        <span className="quick-control-label">大小 / 旋轉</span>
+      <div className="quick-control-group quick-control-group--compact">
+        <span className="quick-control-label">物件</span>
         <button type="button" className="ghost" onClick={actions.onScaleDown}>-</button>
         <button type="button" className="ghost" onClick={actions.onScaleUp}>+</button>
         <button type="button" className="ghost" onClick={actions.onRotate90}>{actions.rotateLabel || "旋轉90"}</button>
-      </div>
-
-      <div className="quick-control-group nudge">
-        <span className="quick-control-label">物件方向</span>
         <button type="button" className="ghost" onClick={actions.onNudgeUp}>↑</button>
         <button type="button" className="ghost" onClick={actions.onNudgeLeft}>←</button>
         <button type="button" className="ghost" onClick={actions.onNudgeDown}>↓</button>
         <button type="button" className="ghost" onClick={actions.onNudgeRight}>→</button>
-      </div>
-
-      <div className="quick-control-group">
-        <span className="quick-control-label">裁切</span>
         <button type="button" className="ghost" onClick={actions.onFit45}>{actions.fitLabel || "單張4:5"}</button>
         <button type="button" className="ghost" onClick={actions.onSpanTwoSlides}>{actions.spanLabel || "跨兩張輪播"}</button>
       </div>
@@ -4116,6 +4108,19 @@ export default function App() {
     onTemplateSelect: handleTemplateSelect,
     onAddAssetToCanvas: handleAddAssetToCanvas,
     onAddStickerToCanvas: handleAddStickerToCanvas,
+    inspectorProps: {
+      hasSelection: !!selectedItem || !!selectedSlot,
+      content: (
+        <InspectorContent
+          selectedItem={selectedItem}
+          selectedSlot={selectedSlot}
+          updateElement={updateElement}
+          updateSlot={updateSlot}
+          setShowGuides={setShowGuides}
+          showGuides={showGuides}
+        />
+      ),
+    },
   };
 
   return (
@@ -4469,7 +4474,6 @@ export default function App() {
             onPickImage={addImageToCanvas}
             activeTab={mobileTab}
             onTabChange={(tab) => {
-              if (tab === "preview") refreshPreviews({ reveal: true });
               setMobileTab(tab);
               setMobileDrawerOpen(true);
             }}

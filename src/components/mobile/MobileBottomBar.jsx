@@ -4,7 +4,7 @@ const ITEMS = [
   { key: "project", label: "專案" },
   { key: "assets", label: "素材" },
   { key: "templates", label: "模板" },
-  { key: "preview", label: "預覽" },
+  { key: "edit", label: "編輯" },
 ];
 
 export default function MobileBottomBar({

@@ -17,6 +17,7 @@ export default function MobileDrawer({
   onTemplateSelect,
   onAddAssetToCanvas,
   onAddStickerToCanvas,
+  inspectorProps,
 }) {
   return (
     <>
@@ -32,6 +33,7 @@ export default function MobileDrawer({
             {activeTab === "project" && "專案"}
             {activeTab === "assets" && "素材"}
             {activeTab === "templates" && "模板"}
+            {activeTab === "edit" && "編輯"}
             {activeTab === "preview" && "預覽"}
           </strong>
 
@@ -132,6 +134,17 @@ export default function MobileDrawer({
 
           {activeTab === "preview" && (
             <PreviewPanel {...previewPanelProps} />
+          )}
+
+          {activeTab === "edit" && (
+            <section className="panel in-drawer">
+              <h2>選取物件</h2>
+              {inspectorProps?.hasSelection ? (
+                inspectorProps.content
+              ) : (
+                <div className="hint-card">先點選畫布上的圖片、文字、貼紙或圖框，再回到這裡編輯細節。</div>
+              )}
+            </section>
           )}
         </div>
       </div>

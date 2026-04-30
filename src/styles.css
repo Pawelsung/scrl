@@ -1384,6 +1384,26 @@ button.danger {
   padding: 10px 12px;
 }
 
+.quick-control-group--compact {
+  display: grid;
+  grid-template-columns: 52px repeat(4, minmax(34px, 1fr));
+}
+
+.quick-control-group--compact .quick-control-label {
+  flex: 0 0 auto;
+  align-self: center;
+}
+
+.quick-control-group--compact button {
+  min-width: 0;
+  padding: 8px 6px;
+  font-size: 12px;
+}
+
+.quick-control-group--compact button:nth-last-child(-n + 2) {
+  grid-column: span 2;
+}
+
 .mobile-dock-actions {
   display: grid;
   gap: 8px;
