@@ -1210,17 +1210,19 @@ function SelectionQuickControls({ actions, compact = false }) {
 
   return (
     <div className={`selection-quick-controls ${compact ? "compact" : ""}`}>
-      <div className="quick-control-group quick-control-group--compact">
-        <span className="quick-control-label">物件</span>
-        <button type="button" className="ghost" onClick={actions.onScaleDown}>-</button>
-        <button type="button" className="ghost" onClick={actions.onScaleUp}>+</button>
-        <button type="button" className="ghost" onClick={actions.onRotate90}>{actions.rotateLabel || "旋轉90"}</button>
-        <button type="button" className="ghost" onClick={actions.onNudgeUp}>↑</button>
-        <button type="button" className="ghost" onClick={actions.onNudgeLeft}>←</button>
-        <button type="button" className="ghost" onClick={actions.onNudgeDown}>↓</button>
-        <button type="button" className="ghost" onClick={actions.onNudgeRight}>→</button>
-        <button type="button" className="ghost" onClick={actions.onFit45}>{actions.fitLabel || "單張4:5"}</button>
-        <button type="button" className="ghost" onClick={actions.onSpanTwoSlides}>{actions.spanLabel || "跨兩張輪播"}</button>
+      <div className="desktop-object-pad">
+        <div className="desktop-object-pad__head">物件控制</div>
+        <div className="desktop-object-pad__grid">
+          <button type="button" className="ghost" onClick={actions.onScaleDown}>-</button>
+          <button type="button" className="ghost" onClick={actions.onNudgeUp}>↑</button>
+          <button type="button" className="ghost" onClick={actions.onScaleUp}>+</button>
+          <button type="button" className="ghost" onClick={actions.onNudgeLeft}>←</button>
+          <button type="button" className="ghost" onClick={actions.onRotate90}>旋</button>
+          <button type="button" className="ghost" onClick={actions.onNudgeRight}>→</button>
+          <button type="button" className="ghost" onClick={actions.onFit45}>4:5</button>
+          <button type="button" className="ghost" onClick={actions.onNudgeDown}>↓</button>
+          <button type="button" className="ghost" onClick={actions.onSpanTwoSlides}>2張</button>
+        </div>
       </div>
     </div>
   );
@@ -4168,6 +4170,7 @@ export default function App() {
                 <>
                   <button className="ghost mobile-icon-btn" onClick={undo}>↶</button>
                   <button className="ghost mobile-icon-btn" onClick={redo}>↷</button>
+                  <button type="button" className="ghost mobile-icon-btn" onClick={clearSavedDraft}>清</button>
                   <button onClick={() => {
                     refreshPreviews({ reveal: true });
                     setMobileTab("preview");

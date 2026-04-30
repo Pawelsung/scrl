@@ -740,7 +740,7 @@ button.danger {
   .toolbar-actions {
     width: 100%;
     display: grid;
-    grid-template-columns: minmax(94px, 1fr) 34px 34px minmax(58px, 0.7fr);
+    grid-template-columns: minmax(82px, 1fr) 32px 32px 32px minmax(52px, 0.7fr);
     gap: 6px;
     align-items: center;
   }
@@ -1402,6 +1402,33 @@ button.danger {
 
 .quick-control-group--compact button:nth-last-child(-n + 2) {
   grid-column: span 2;
+}
+
+.desktop-object-pad {
+  display: grid;
+  gap: 8px;
+}
+
+.desktop-object-pad__head {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.desktop-object-pad__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  max-width: 168px;
+}
+
+.desktop-object-pad__grid button {
+  min-width: 0;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .mobile-dock-actions {
