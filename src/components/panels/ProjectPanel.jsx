@@ -25,7 +25,7 @@ export default function ProjectPanel({
         <span>選模板</span>
         <span>上傳圖片</span>
         <span>填入圖框</span>
-        <span>預覽匯出</span>
+        <span>輸出下載</span>
       </div>
 
       <label className="field">

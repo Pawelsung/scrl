@@ -19,8 +19,8 @@ export default function PreviewPanel({
     <section className={`preview-panel ${collapsed ? "collapsed" : ""}`}>
       <div className="preview-head">
         <div>
-          <h2>切圖預覽</h2>
-          <p>先檢查每張接縫，再手動上傳到 IG。</p>
+          <h2>輸出切圖</h2>
+          <p>按輸出後產生最新切圖，再下載或存到手機。</p>
         </div>
 
         <button
@@ -41,7 +41,7 @@ export default function PreviewPanel({
                 <article key={preview.id || index} className="preview-card">
                   <img
                     src={preview.src}
-                    alt={`預覽 ${index + 1}`}
+                    alt={`輸出切圖 ${index + 1}`}
                     loading="lazy"
                     decoding="async"
                   />
@@ -74,7 +74,7 @@ export default function PreviewPanel({
               ))
             ) : (
               <div className="hint-card">
-                {isBusy ? "預覽生成中…" : "目前還沒有預覽。"}
+                {isBusy ? "切圖生成中…" : "按輸出後，最新切圖會顯示在這裡。"}
               </div>
             )}
           </div>

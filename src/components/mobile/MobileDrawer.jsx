@@ -34,7 +34,7 @@ export default function MobileDrawer({
             {activeTab === "assets" && "素材"}
             {activeTab === "templates" && "模板"}
             {activeTab === "edit" && "編輯"}
-            {activeTab === "preview" && "預覽"}
+            {activeTab === "preview" && "輸出"}
           </strong>
 
           <button type="button" className="ghost mobile-close-btn" onClick={onClose}>

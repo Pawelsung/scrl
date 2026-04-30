@@ -3496,6 +3496,15 @@ export default function App() {
     if (reveal) setPreviewExpandSignal((value) => value + 1);
   };
 
+  const handleOutput = async () => {
+    if (isExporting) return;
+    await refreshPreviews({ reveal: true });
+    if (isMobile) {
+      setMobileTab("preview");
+      setMobileDrawerOpen(true);
+    }
+  };
+
   const downloadDataUrl = (dataUrl, filename) => {
     const a = document.createElement("a");
     a.href = dataUrl;
@@ -4140,7 +4149,7 @@ export default function App() {
                   <button className="ghost" onClick={redo}>重做</button>
                   <button type="button" className="ghost danger" onClick={removeSelected}>刪除選取</button>
                   <button type="button" className="ghost" onClick={clearSavedDraft}>清除草稿</button>
-                  <button type="button" onClick={() => refreshPreviews({ reveal: true })}>更新預覽</button>
+                  <button type="button" onClick={handleOutput}>輸出</button>
                 </>
               )}
 
@@ -4149,12 +4158,8 @@ export default function App() {
                   <button className="ghost mobile-icon-btn" onClick={undo}>↶</button>
                   <button className="ghost mobile-icon-btn" onClick={redo}>↷</button>
                   <button type="button" className="ghost mobile-icon-btn" onClick={clearSavedDraft}>清</button>
-                  <button onClick={() => {
-                    refreshPreviews({ reveal: true });
-                    setMobileTab("preview");
-                    setMobileDrawerOpen(true);
-                  }}>
-                    預覽
+                  <button onClick={handleOutput}>
+                    輸出
                   </button>
                 </>
               )}
@@ -4184,7 +4189,7 @@ export default function App() {
               <section className="start-guide">
                 <div>
                   <strong>從這裡開始做一組 carousel</strong>
-                  <p>先上傳圖片或套用模板，再用切圖預覽確認每張輸出。</p>
+                  <p>先上傳圖片或套用模板，完成編輯後按輸出產生切圖。</p>
                 </div>
                 <div className="start-guide__actions">
                   <button type="button" onClick={handleUploadImages}>上傳圖片</button>
