@@ -702,6 +702,7 @@ button.danger {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
     height: 100%;
+    min-height: 100dvh;
     background: var(--bg);
   }
 
@@ -960,6 +961,16 @@ button.danger {
 
   .asset-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) and (display-mode: standalone) {
+  .app-shell {
+    height: 100dvh;
+  }
+
+  .canvas-toolbar {
+    padding-top: calc(8px + env(safe-area-inset-top));
   }
 }
 
