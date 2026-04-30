@@ -1466,7 +1466,8 @@ button.danger {
   opacity: 0.42;
 }
 
-.mobile-crop-pad {
+.mobile-crop-pad,
+.mobile-object-pad {
   position: fixed;
   z-index: 86;
   width: 138px;
@@ -1477,6 +1478,10 @@ button.danger {
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
   touch-action: none;
   user-select: none;
+}
+
+.mobile-object-pad {
+  width: 162px;
 }
 
 .mobile-crop-pad__handle {
@@ -1494,19 +1499,37 @@ button.danger {
   cursor: grabbing;
 }
 
-.mobile-crop-pad__grid {
+.mobile-crop-pad__grid,
+.mobile-object-pad__grid {
   display: grid;
   grid-template-columns: repeat(3, 38px);
   gap: 4px;
   justify-content: center;
 }
 
-.mobile-crop-pad__grid button {
+.mobile-crop-pad__grid button,
+.mobile-object-pad__grid button {
   min-width: 38px;
   min-height: 36px;
   padding: 0;
   border-radius: 8px;
   font-size: 13px;
+  font-weight: 800;
+}
+
+.mobile-object-pad__actions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.mobile-object-pad__actions button {
+  min-width: 0;
+  min-height: 30px;
+  padding: 0;
+  border-radius: 8px;
+  font-size: 12px;
   font-weight: 800;
 }
 

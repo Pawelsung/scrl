@@ -1290,6 +1290,69 @@ function MobileCropPad({ actions, hidden = false }) {
   );
 }
 
+function MobileObjectPad({ actions, hidden = false, onClearSelection }) {
+  const [pos, setPos] = useState({ x: 16, y: 132 });
+  const dragRef = useRef(null);
+
+  if (hidden || !actions?.hasSelection) return null;
+
+  const startDrag = (e) => {
+    dragRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      x: pos.x,
+      y: pos.y,
+    };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+
+  const moveDrag = (e) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const nextX = clamp(drag.x + e.clientX - drag.startX, 8, Math.max(8, window.innerWidth - 178));
+    const nextY = clamp(drag.y + e.clientY - drag.startY, 74, Math.max(74, window.innerHeight - 304));
+    setPos({ x: nextX, y: nextY });
+  };
+
+  const stopDrag = (e) => {
+    if (dragRef.current?.pointerId === e.pointerId) dragRef.current = null;
+  };
+
+  return (
+    <div className="mobile-object-pad" style={{ left: pos.x, top: pos.y }}>
+      <button
+        type="button"
+        className="mobile-crop-pad__handle"
+        onPointerDown={startDrag}
+        onPointerMove={moveDrag}
+        onPointerUp={stopDrag}
+        onPointerCancel={stopDrag}
+      >
+        {actions.isCropSlot ? "裁切框" : "物件"}
+      </button>
+      <div className="mobile-object-pad__grid">
+        <button type="button" className="ghost" onClick={actions.onScaleDown}>-</button>
+        <button type="button" className="ghost" onClick={actions.onNudgeUp}>↑</button>
+        <button type="button" className="ghost" onClick={actions.onScaleUp}>+</button>
+        <button type="button" className="ghost" onClick={actions.onNudgeLeft}>←</button>
+        <button type="button" className="ghost" onClick={actions.onRotate90}>旋</button>
+        <button type="button" className="ghost" onClick={actions.onNudgeRight}>→</button>
+        <button type="button" className="ghost" onClick={actions.onFit45}>4:5</button>
+        <button type="button" className="ghost" onClick={actions.onNudgeDown}>↓</button>
+        <button type="button" className="ghost" onClick={actions.onSpanTwoSlides}>2張</button>
+      </div>
+      <div className="mobile-object-pad__actions">
+        <button type="button" className="ghost" onClick={actions.onSendBackward}>下</button>
+        <button type="button" className="ghost" onClick={actions.onBringForward}>上</button>
+        <button type="button" className="ghost" onClick={actions.onDuplicate}>複</button>
+        <button type="button" className="ghost danger" onClick={actions.onRemove}>刪</button>
+        <button type="button" className="ghost" onClick={onClearSelection}>完成</button>
+      </div>
+    </div>
+  );
+}
+
 function InspectorContent({
   selectedItem,
   selectedSlot,
@@ -1762,7 +1825,7 @@ export default function App() {
 
   const selectedItem = elements.find((el) => el.id === selectedId) || null;
   const selectedSlot = templateSlots.find((slot) => slot.id === selectedSlotId) || null;
-  const mobileWorkspaceReserve = isMobile ? (selectedItem || selectedSlot ? 230 : 170) : 0;
+  const mobileWorkspaceReserve = isMobile ? 148 : 0;
   const registerSelectableNode = useCallback((kind, id, node) => {
     const key = `${kind}:${id}`;
     if (node) {
@@ -4412,7 +4475,13 @@ export default function App() {
             }}
             zoomPercent={Math.round((userZoom || 1) * 100)}
             hidden={mobileDrawerOpen}
-            selectedActions={mobileSelectedActions}
+          />
+        )}
+
+        {isMobile && (
+          <MobileObjectPad
+            actions={mobileSelectedActions}
+            hidden={mobileDrawerOpen || isExporting}
             onClearSelection={clearSelection}
           />
         )}
