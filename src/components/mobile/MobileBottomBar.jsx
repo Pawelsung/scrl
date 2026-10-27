@@ -19,6 +19,7 @@ export default function MobileBottomBar({
           key={item.key}
           type="button"
           className={activeTab === item.key ? "active" : ""}
+          aria-current={activeTab === item.key ? "page" : undefined}
           onClick={() => onTabChange(item.key)}
         >
           {item.label}

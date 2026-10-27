@@ -11,6 +11,7 @@
     "deploy:firebase": "npm run build && firebase deploy --only hosting"
   },
   "dependencies": {
+    "fflate": "^0.7.5",
     "konva": "^9.3.18",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

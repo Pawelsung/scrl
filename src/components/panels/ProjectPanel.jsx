@@ -1,13 +1,17 @@
 import React from "react";
+import TemplatePreview from "../TemplatePreview";
 
 export default function ProjectPanel({
   panelClassName = "panel",
+  settingsOnly = false,
   project,
   setProject,
   onUploadImages,
   onAddText,
   onAddFrame,
   onExportJson,
+  onClearDraft,
+  onRepairSwap,
   onImportJson,
   assets,
   stickers,
@@ -73,6 +77,13 @@ export default function ProjectPanel({
         </button>
       </div>
 
+      <div className="project-file-options">
+        {activeTemplateId === "swap-square" && (
+          <button type="button" className="ghost" onClick={onRepairSwap}>修復置換對齊（保留照片）</button>
+        )}
+        <button type="button" className="ghost danger" onClick={onClearDraft}>清除所有資料</button>
+        <div className="sub">清除本瀏覽器的照片素材、畫布與草稿。</div>
+      </div>
       <div className="panel-section-divider" />
 
       <h2>背景</h2>
@@ -124,6 +135,7 @@ export default function ProjectPanel({
         </label>
       </div>
 
+      {!settingsOnly && <>
       <div className="panel-section-divider" />
 
       <h2>模板</h2>
@@ -137,6 +149,7 @@ export default function ProjectPanel({
             }`}
             onClick={() => onTemplateSelect(template.id)}
           >
+            <TemplatePreview template={template} />
             <strong>{template.name}</strong>
             {template.description ? (
               <div className="sub" style={{ marginTop: 4 }}>
@@ -146,6 +159,13 @@ export default function ProjectPanel({
           </button>
         ))}
       </div>
+
+      {activeTemplateId === "swap-square" && (
+        <div className="hint-card swap-template-guide">
+          <strong>使用方式</strong>
+          <span>先點上方主圖框選第一張照片，再選第二張；中央方形會自動交叉置換並同步更新。</span>
+        </div>
+      )}
 
       <div className="panel-section-divider" />
 
@@ -201,6 +221,7 @@ export default function ProjectPanel({
       ) : (
         <div className="hint-card">目前還沒有貼紙素材。</div>
       )}
+      </>}
     </section>
   );
 }

@@ -9,6 +9,7 @@ export default function BottomAssetTray({
   onPickImage,
   persistent = false,
 }) {
+  const [collapsed, setCollapsed] = useState(false);
   const [scrollLeft, setScrollLeft] = useState(0);
   const virtual = useMemo(() => {
     if (images.length <= 36) {
@@ -41,9 +42,10 @@ export default function BottomAssetTray({
               : "未選圖框時，點圖片會直接加入畫布"}
           </span>
         </div>
+        {persistent && <button type="button" className="ghost" aria-expanded={!collapsed} onClick={() => setCollapsed(value => !value)}>{collapsed ? "展開素材" : "收合素材"}</button>}
       </div>
 
-      <div className="bottom-asset-tray__rail" onScroll={(e) => setScrollLeft(e.currentTarget.scrollLeft)}>
+      <div hidden={collapsed} className="bottom-asset-tray__rail" onScroll={(e) => setScrollLeft(e.currentTarget.scrollLeft)}>
         {images.length === 0 ? (
           <div className="bottom-asset-tray__empty">先上傳圖片，這裡會顯示素材預覽。</div>
         ) : (
