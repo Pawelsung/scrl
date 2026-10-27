@@ -11,17 +11,26 @@ import { Stage, Layer, Rect, Line } from "react-konva";
 
 import { detachSwapSlot, alignSwapBase } from "./lib/slotImageTransform.js";
 
-import ProjectPanelUI from "./components/panels/ProjectPanel";
-import PreviewPanelUI from "./components/panels/PreviewPanel";
-import MobileDrawerUI from "./components/mobile/MobileDrawer";
-import BottomAssetTray from "./components/mobile/BottomAssetTray";
-import MobileBottomDock from "./components/mobile/MobileBottomDock";
+import { ChevronLeft, ChevronRight, FolderOpen, GalleryHorizontal, ImagePlus, LayoutTemplate, Minus, Plus, RectangleVertical, Settings2, Shapes } from "lucide-react";
+import TopBar from "./components/layout/TopBar";
+import SidePanel from "./components/layout/SidePanel";
+import Dialog from "./components/ui/Dialog";
+import { IconButton } from "./components/ui/IconButton";
+import TemplatePanel from "./components/panels/TemplatePanel";
+import AssetPanel from "./components/panels/AssetPanel";
+import ElementsPanel from "./components/panels/ElementsPanel";
+import CanvasSettings from "./components/panels/CanvasSettings";
+import FilePanel from "./components/panels/FilePanel";
+import ExportPanel from "./components/panels/ExportPanel";
+import Inspector from "./components/inspector/Inspector";
+import { QuickLayoutActions } from "./components/inspector/TransformControls";
+import MobileSheet from "./components/mobile/MobileSheet";
+import MobileToolbar from "./components/mobile/MobileToolbar";
 import { DraggableImage } from "./components/canvas/DraggableImage";
 import { DraggableText } from "./components/canvas/DraggableText";
 import { SelectionTransformer } from "./components/canvas/SelectionTransformer";
 import { StickerShape } from "./components/canvas/StickerShape";
 import { TemplateSlot } from "./components/canvas/TemplateSlot";
-import { DesktopInspectorPanel } from "./components/inspector/DesktopInspectorPanel";
 import { InspectorContent } from "./components/inspector/InspectorContent";
 import { DEFAULT_CANVAS_COLOR, DEFAULT_CANVAS_COLOR_2, MAX_IMAGE_DIMENSION_DESKTOP, MAX_IMAGE_DIMENSION_MOBILE, MAX_ZOOM, MIN_ZOOM, RATIOS, SLOT_NUDGE, SLOT_ZOOM_STEP, STICKERS, TEMPLATES } from "./constants/editor.js";
 import { clamp, createGradientStops, createSlot, loadImageFile, getRotatedGeometry, getSelectedTypeLabel, getShortestAngleDelta, hexToRgba, normalizeRotation, resizeImageSource, rotateDelta, uid } from "./lib/editorUtils.js";
@@ -53,7 +62,6 @@ export default function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
   const isInteractingRef = useRef(false);
-  const [previewExpandSignal, setPreviewExpandSignal] = useState(0);
   const [saveFallback, setSaveFallback] = useState(null);
   const [exportScale, setExportScale] = useState(1);
   const [exportStatus, setExportStatus] = useState("");
@@ -61,8 +69,13 @@ export default function App() {
   const [exportError, setExportError] = useState("");
   const [previewsStale, setPreviewsStale] = useState(false);
   useEffect(() => {
+    if (!exportError) return undefined;
+    const timer = setTimeout(() => setExportError(""), 5000);
+    return () => clearTimeout(timer);
+  }, [exportError]);
+  useEffect(() => {
     setPreviewsStale(true);
-  }, [slides, ratioKey, backgroundMode, bgPrimary, bgSecondary, elements, templateSlots, layerOrder, exportScale]);
+  }, [slides, ratioKey, backgroundMode, bgPrimary, bgSecondary, elements, templateSlots, layerOrder]);
   const [liveGuides, setLiveGuides] = useState({ vertical: [], horizontal: [] });
   const selectableNodesRef = useRef(new Map());
   const [selectableNodeRevision, setSelectableNodeRevision] = useState(0);
@@ -78,8 +91,10 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth <= 768 : false
   );
-  const [mobileTab, setMobileTab] = useState("project");
+  const [mobileTab, setMobileTab] = useState("templates");
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [sideTab, setSideTab] = useState("templates");
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   const containerRef = useRef(null);
   const panLayerRef = useRef(null);
@@ -125,7 +140,7 @@ export default function App() {
 
   const selectedItem = elements.find((el) => el.id === selectedId) || null;
   const selectedSlot = templateSlots.find((slot) => slot.id === selectedSlotId) || null;
-  const mobileWorkspaceReserve = isMobile ? 148 : 0;
+  const mobileWorkspaceReserve = 0;
   const registerSelectableNode = useCallback((kind, id, node) => {
     const key = `${kind}:${id}`;
     if (node) {
@@ -531,7 +546,7 @@ export default function App() {
     const actualScale = fitScale * zoom;
     const center = index === null ? canvasW / 2 : (index + 0.5) * singleW;
     setUserZoom(zoom);
-    setPan(clampPan(containerSize.w / 2 - center * actualScale, 48 + (availableHeight - canvasH * actualScale) / 2, zoom));
+    setPan(clampPan(containerSize.w / 2 - center * actualScale, 8 + (availableHeight - canvasH * actualScale) / 2, zoom));
   };
 
   const clearSelection = () => {
@@ -1357,21 +1372,29 @@ export default function App() {
     runExport((stage) => renderSlideBlobs(stage, indices, { singleW, singleH, pixelRatio }));
   const exportSlideBlob = async (index, pixelRatio = 1) => (await exportSlideBlobs([index], pixelRatio))[0] || null;
 
-  const refreshPreviews = async ({ reveal = false } = {}) => {
+  const refreshPreviews = async () => {
     const data = await exportSlices(isMobile ? 0.32 : exportScale);
     if (!data.length) return;
     setPreviews(data);
     setPreviewsStale(false);
-    if (reveal) setPreviewExpandSignal((value) => value + 1);
   };
+
+  // Desktop previews double as the download files, so re-render them at the new quality.
+  useEffect(() => {
+    if (exportDialogOpen && !isMobile) refreshPreviews();
+    // Only a quality change should trigger this.
+  }, [exportScale]);
 
   const handleOutput = async () => {
     if (isExporting) return;
-    await refreshPreviews({ reveal: true });
+    clearSelection();
     if (isMobile) {
-      setMobileTab("preview");
+      setMobileTab("export");
       setMobileDrawerOpen(true);
+    } else {
+      setExportDialogOpen(true);
     }
+    await refreshPreviews();
   };
 
   const openSaveFallback = (blob, filename) => {
@@ -1472,7 +1495,7 @@ export default function App() {
 
       if (e.key === "Delete" || e.key === "Backspace") {
         const activeTag = document.activeElement?.tagName?.toLowerCase();
-        const editable = activeTag === "input" || activeTag === "textarea";
+        const editable = activeTag === "input" || activeTag === "textarea" || activeTag === "select";
         if (!editable && (selectedId || selectedSlotId)) removeSelected();
       }
 
@@ -1487,6 +1510,11 @@ export default function App() {
           if (e.key === "ArrowLeft") nudgeSelectedBox(-step, 0);
           if (e.key === "ArrowRight") nudgeSelectedBox(step, 0);
         }
+      }
+
+      if (e.key === "Escape" && (selectedId || selectedSlotId)) {
+        const activeTag = document.activeElement?.tagName?.toLowerCase();
+        if (activeTag !== "input" && activeTag !== "textarea") clearSelection();
       }
 
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") {
@@ -1866,26 +1894,70 @@ export default function App() {
     clearSelection();
   };
 
-  const projectPanelProps = {
-    project: projectPanelProject,
-    setProject: setProjectPanelProject,
-    onUploadImages: handleUploadImages,
-    onAddText: handleAddText,
-    onAddFrame: handleAddFrame,
-    onClearDraft: clearSavedDraft,
-    onRepairSwap: repairSwapAlignment,
-    onExportJson: handleExportJson,
-    onImportJson: handleImportJson,
-    assets: images,
-    stickers: projectPanelStickers,
-    templates: projectPanelTemplates,
-    activeTemplateId: templateId,
-    onTemplateSelect: handleTemplateSelect,
-    onAddAssetToCanvas: handleAddAssetToCanvas,
-    onAddStickerToCanvas: handleAddStickerToCanvas,
+  const selectionLabel = (selectedItem || selectedSlot) ? getSelectedTypeLabel(selectedItem, selectedSlot) : null;
+  useEffect(() => {
+    if (mobileTab === "edit" && !selectionLabel) setMobileDrawerOpen(false);
+  }, [mobileTab, selectionLabel]);
+  const openPhotoPicker = () => {
+    if (isMobile) {
+      setMobileTab("assets");
+      setMobileDrawerOpen(true);
+    } else {
+      setSideTab("assets");
+    }
+  };
+  const showRepairSwap = templateId === "swap-square";
+
+  const panelTabs = [
+    { key: "templates", label: "模板", icon: LayoutTemplate },
+    { key: "assets", label: "照片", icon: ImagePlus },
+    { key: "elements", label: "元素", icon: Shapes },
+    ...(isMobile ? [{ key: "canvas", label: "畫布", icon: Settings2 }] : []),
+    { key: "file", label: "檔案", icon: FolderOpen },
+  ];
+
+  const renderPanel = (key) => {
+    switch (key) {
+      case "templates":
+        return <TemplatePanel templates={projectPanelTemplates} activeTemplateId={templateId} onSelect={handleTemplateSelect} />;
+      case "assets":
+        return <AssetPanel assets={images} selectedSlot={selectedSlot} onUpload={handleUploadImages} onPick={handleAddAssetToCanvas} />;
+      case "elements":
+        return <ElementsPanel stickers={projectPanelStickers} onAddText={handleAddText} onAddFrame={handleAddFrame} onAddSticker={handleAddStickerToCanvas} />;
+      case "canvas":
+        return <CanvasSettings project={projectPanelProject} setProject={setProjectPanelProject} />;
+      case "file":
+        return (
+          <FilePanel
+            draftStatus={draftStatus}
+            onExportJson={handleExportJson}
+            onImportJson={handleImportJson}
+            onClearDraft={clearSavedDraft}
+            onRepairSwap={showRepairSwap ? repairSwapAlignment : null}
+          />
+        );
+      case "edit":
+        return (
+          <>
+            <div className="panel-body">
+              <QuickLayoutActions actions={mobileSelectedActions} />
+            </div>
+            <InspectorContent
+              selectedItem={selectedItem}
+              selectedSlot={selectedSlot}
+              updateElement={updateElement}
+              updateSlot={updateSlot}
+            />
+          </>
+        );
+      case "export":
+        return <ExportPanel {...exportPanelProps} />;
+      default:
+        return null;
+    }
   };
 
-  const previewPanelProps = {
+  const exportPanelProps = {
     directDownload: !isMobile,
     previews: previews.map((src, idx) => ({
       id: `preview-${idx + 1}`,
@@ -1912,100 +1984,41 @@ export default function App() {
     onDownloadAll: downloadAll,
     isBusy: isExporting,
     isStale: previewsStale,
-    onRefresh: handleOutput,
-    defaultCollapsed: !isMobile,
-    expandSignal: previewExpandSignal,
+    onRefresh: refreshPreviews,
+    exportScale,
+    onExportScaleChange: setExportScale,
+    qualityOptions: [
+      { value: 1, label: `標準 ${singleW}×${singleH}` },
+      { value: 2, label: `高畫質 ${singleW * 2}×${singleH * 2}` },
+    ],
   };
 
-  const mobileDrawerProps = {
-    open: mobileDrawerOpen,
-    activeTab: mobileTab,
-    onClose: () => setMobileDrawerOpen(false),
-    projectPanelProps,
-    previewPanelProps,
-    assets: images,
-    stickers: projectPanelStickers,
-    templates: projectPanelTemplates,
-    activeTemplateId: templateId,
-    onTemplateSelect: handleTemplateSelect,
-    onAddAssetToCanvas: handleAddAssetToCanvas,
-    onAddStickerToCanvas: handleAddStickerToCanvas,
-    inspectorProps: {
-      hasSelection: !!selectedItem || !!selectedSlot,
-      actions: mobileSelectedActions,
-      onPickPhoto: () => setMobileTab("assets"),
-      isSlot: !!selectedSlot,
-      content: (
-        <InspectorContent
-          selectedItem={selectedItem}
-          selectedSlot={selectedSlot}
-          updateElement={updateElement}
-          updateSlot={updateSlot}
-          setShowGuides={setShowGuides}
-          showGuides={showGuides}
-        />
-      ),
-    },
-  };
+  const sheetTitles = { templates: "模板", assets: "照片", elements: "元素", canvas: "畫布", file: "檔案", edit: "調整", export: "輸出" };
+  const zoomPercent = Math.round(displayScale * 100);
 
   return (
-    <div className="app-shell">
-      {!isMobile && (
-        <aside className="sidebar left">
-          <ProjectPanelUI {...projectPanelProps} />
-        </aside>
-      )}
+    <div className={`app ${isMobile ? "app--mobile" : "app--desktop"}`}>
+      <TopBar
+        draftStatus={draftStatus}
+        canUndo={historyPast.length > 0}
+        canRedo={historyFuture.length > 0}
+        onUndo={undo}
+        onRedo={redo}
+        onExport={handleOutput}
+        isExporting={isExporting}
+      />
 
-      <main className="main" inert={isMobile && mobileDrawerOpen ? "" : undefined}>
-        <div className="canvas-panel">
-          <div className="canvas-toolbar">
-            <div>
-              <strong>IG貼文切圖工具</strong>
-              <span className="sub">
-                手機：選取照片後，雙指可同時縮放、移動及旋轉；框內照片保留圖框位置。
-              </span>
-            </div>
+      <div className="workspace" inert={isMobile && mobileDrawerOpen ? "" : undefined}>
+        {!isMobile && (
+          <SidePanel tabs={panelTabs} activeTab={sideTab} onTabChange={setSideTab}>
+            {renderPanel(sideTab)}
+          </SidePanel>
+        )}
 
-            <div className="project-status" role="status">{exportError || draftStatus}</div>
-            <div className="toolbar-actions">
-              <label className="export-quality-control">
-                <span>輸出</span>
-                <select
-                  value={exportScale}
-                  onChange={(e) => setExportScale(Number(e.target.value))}
-                  disabled={isExporting}
-                >
-                  <option value={1}>標準 · {singleW}×{singleH}</option>
-                  <option value={2}>高畫質 · {singleW * 2}×{singleH * 2}</option>
-                </select>
-              </label>
-
-              {!isMobile && (
-                <>
-                  <button className="ghost" onClick={undo}>復原</button>
-                  <button className="ghost" onClick={redo}>重做</button>
-                  <button type="button" className="ghost danger" onClick={removeSelected}>刪除選取</button>
-
-                  <button type="button" onClick={handleOutput}>輸出</button>
-                </>
-              )}
-
-              {isMobile && (
-                <>
-                  <button className="ghost mobile-icon-btn" aria-label="復原" onClick={undo}>↶</button>
-                  <button className="ghost mobile-icon-btn" aria-label="重做" onClick={redo}>↷</button>
-
-                  <button onClick={handleOutput}>
-                    輸出
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
+        <main className="canvas-area">
           <div
             ref={containerRef}
-            className="canvas-stage-wrap"
+            className="canvas-viewport"
             onPointerDown={handleViewportPointerDown}
             onPointerMove={handleViewportPointerMove}
             onPointerUp={handleViewportPointerUp}
@@ -2016,50 +2029,52 @@ export default function App() {
             onTouchCancelCapture={handleViewportTouchEnd}
             onDoubleClick={resetView}
           >
-            {isMobile && !mobileDrawerOpen && (
-              <nav className="canvas-page-nav" aria-label="輪播畫布導覽" onPointerDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
-                <button type="button" onClick={() => showSlides(null)}>全部</button>
-                <button type="button" onClick={() => showSlides(visibleSlideIndex)}>單張</button>
-                <button type="button" aria-label="上一張" disabled={visibleSlideIndex === 0} onClick={() => showSlides(visibleSlideIndex - 1)}>上一張</button>
-                <span aria-live="polite">{visibleSlideIndex + 1} / {slides}</span>
-                <button type="button" aria-label="下一張" disabled={visibleSlideIndex === slides - 1} onClick={() => showSlides(visibleSlideIndex + 1)}>下一張</button>
-              </nav>
-            )}
             {isExporting && (
-              <div className="export-status" role="status">
+              <div className="canvas-chip canvas-chip--top" role="status">
                 {exportStatus || "正在輸出…"} · {exportW}×{exportH}
               </div>
             )}
 
+            {!isMobile && selectionLabel && !isExporting && (
+              <div className="canvas-chip canvas-chip--top">
+                {selectionLabel} · {rotationDisplay}°
+              </div>
+            )}
+
             {!hasStartedProject && (
-              <section className="start-guide">
-                <div>
-                  <strong>從這裡開始做一組 carousel</strong>
-                  <p>先上傳圖片或套用模板，完成編輯後按輸出產生切圖。</p>
-                </div>
-                <div className="start-guide__actions">
-                  <button type="button" onClick={handleUploadImages}>上傳圖片</button>
-                  <button type="button" className="ghost" onClick={() => applyTemplate("frame")}>
-                    圖框模板
+              <section className="start-card" onPointerDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
+                <GalleryHorizontal size={32} strokeWidth={1.5} aria-hidden="true" />
+                <h2>做一組 IG 輪播</h2>
+                <p>上傳照片或套用模板，排好後按「輸出」，就會自動切成每一張。</p>
+                <div className="start-card__actions">
+                  <button type="button" className="btn btn--primary" onClick={handleUploadImages}>
+                    <ImagePlus size={18} aria-hidden="true" />
+                    上傳照片
                   </button>
-                  <button type="button" className="ghost" onClick={() => applyTemplate("grid4")}>
-                    四格拼貼
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      if (isMobile) {
+                        setMobileTab("templates");
+                        setMobileDrawerOpen(true);
+                      } else {
+                        setSideTab("templates");
+                      }
+                    }}
+                  >
+                    <LayoutTemplate size={18} aria-hidden="true" />
+                    選模板
                   </button>
                 </div>
               </section>
             )}
 
-            {!isMobile && (selectedItem || selectedSlot) && (
-              <div className="rotation-hud">
-                {getSelectedTypeLabel(selectedItem, selectedSlot)} · {rotationDisplay}°
-              </div>
-            )}
-
             {isMobile && slides > mobileVisibleSlideCount && (
-              <div className="mobile-canvas-scrollbar" aria-hidden="true">
+              <div className="canvas-scrollbar" aria-hidden="true">
                 <div
                   ref={mobileScrollbarThumbRef}
-                  className="mobile-canvas-scrollbar__thumb"
+                  className="canvas-scrollbar__thumb"
                   style={{
                     width: `${Math.max(28, (mobileVisibleSlideCount / slides) * 100)}%`,
                     left: `${(100 - Math.max(28, (mobileVisibleSlideCount / slides) * 100)) * mobileScrollProgress}%`,
@@ -2068,28 +2083,28 @@ export default function App() {
               </div>
             )}
 
+          <div
+            ref={panLayerRef}
+            className="stage-pan-layer"
+            style={{ transform: `translate(${pan.x}px, ${pan.y}px)` }}
+          >
             <div
-              ref={panLayerRef}
-              className="stage-pan-layer"
-              style={{ transform: `translate(${pan.x}px, ${pan.y}px)` }}
+              className="stage-scale-box"
+              style={{ width: canvasW * displayScale, height: canvasH * displayScale }}
             >
               <div
-                className="stage-scale-box"
-                style={{ width: canvasW * displayScale, height: canvasH * displayScale }}
+                className="stage-real-size"
+                style={{
+                  width: canvasW,
+                  height: canvasH,
+                  transform: `scale(${displayScale})`,
+                  transformOrigin: "top left",
+                }}
               >
-                <div
-                  className="stage-real-size"
-                  style={{
-                    width: canvasW,
-                    height: canvasH,
-                    transform: `scale(${displayScale})`,
-                    transformOrigin: "top left",
-                  }}
-                >
-                  <Stage
-                    ref={stageRef}
-                    width={canvasW}
-                    height={canvasH}
+                <Stage
+                  ref={stageRef}
+                  width={canvasW}
+                  height={canvasH}
 	                    onMouseDown={(e) => {
 	                      if (isInteractingRef.current) return;
 	                      const clickedOnEmpty = e.target === e.target.getStage();
@@ -2109,277 +2124,296 @@ export default function App() {
 	                        if (isMobile && touch) startViewportPan(touch.clientX, touch.clientY);
 	                      }
 	                    }}
-                    onWheel={onWheelScaleSelected}
-                  >
-                    <Layer>
-                      {renderBackground()}
+                  onWheel={onWheelScaleSelected}
+                >
+                  <Layer>
+                    {renderBackground()}
 
-                      {visibleLayerOrder.map((entry) => {
-                        if (entry.kind === "slot") {
-                          const slot = templateSlots.find((candidate) => candidate.id === entry.id);
-                          if (!slot) return null;
-                          return (
-                            <TemplateSlot
-                              key={`slot-${slot.id}`}
-                              slot={slot}
-                              sourceSlot={slot.swapLayer === "overlay" ? templateSlots.find(candidate =>
-                                candidate.swapLayer === "base" && candidate.swapGroup === slot.swapGroup && candidate.swapSource === slot.swapSource
-                              ) : null}
-                              isSelected={!isExporting && slot.id === selectedSlotId}
-                              onSelect={() => {
-                                setSelectedSlotId(slot.id);
-                                setSelectedId(null);
-                              }}
-                              onChange={updateSlot}
-                              snapGuides={snapGuides}
-                              canvasW={canvasW}
-                              canvasH={canvasH}
-                              transformerAnchorSize={transformerAnchorSize}
-                              editing={!isExporting}
+                    {visibleLayerOrder.map((entry) => {
+                      if (entry.kind === "slot") {
+                        const slot = templateSlots.find((candidate) => candidate.id === entry.id);
+                        if (!slot) return null;
+                        return (
+                          <TemplateSlot
+                            key={`slot-${slot.id}`}
+                            slot={slot}
+                            sourceSlot={slot.swapLayer === "overlay" ? templateSlots.find(candidate =>
+                              candidate.swapLayer === "base" && candidate.swapGroup === slot.swapGroup && candidate.swapSource === slot.swapSource
+                            ) : null}
+                            isSelected={!isExporting && slot.id === selectedSlotId}
+                            onSelect={() => {
+                              setSelectedSlotId(slot.id);
+                              setSelectedId(null);
+                            }}
+                            onChange={updateSlot}
+                            snapGuides={snapGuides}
+                            canvasW={canvasW}
+                            canvasH={canvasH}
+                            transformerAnchorSize={transformerAnchorSize}
+                            editing={!isExporting}
 	                              onInteractionChange={setObjectInteracting}
-                              pushHistory={pushHistory}
-                              registerSelectableNode={registerSelectableNode}
-                              onSnapChange={updateLiveGuides}
-                            />
-                          );
-                        }
-
-                        const item = elements.find((candidate) => candidate.id === entry.id);
-                        if (!item || item.type === "frameRect") return null;
-
-                        if (item.type === "image") {
-                          return (
-                            <DraggableImage
-                              key={item.id}
-                              item={item}
-	                              isSelected={!isExporting && item.id === selectedId}
-	                              onSelect={() => {
-	                                setSelectedId(item.id);
-	                                setSelectedSlotId(null);
-	                              }}
-                              onChange={updateElement}
-                              snapGuides={snapGuides}
-                              canvasW={canvasW}
-                              canvasH={canvasH}
-                              transformerAnchorSize={transformerAnchorSize}
-                              editing={!isExporting}
-                              keepRatioOnTransform={modifiers.shift || isMobile}
-                              centeredScaling={modifiers.alt}
-	                              onInteractionChange={setObjectInteracting}
-                              pushHistory={pushHistory}
-                              registerSelectableNode={registerSelectableNode}
-                              onSnapChange={updateLiveGuides}
-                            />
-                          );
-                        }
-
-                        if (item.type === "text") {
-                          return (
-                            <DraggableText
-                              key={item.id}
-                              item={item}
-	                              isSelected={!isExporting && item.id === selectedId}
-	                              onSelect={() => {
-	                                setSelectedId(item.id);
-	                                setSelectedSlotId(null);
-	                              }}
-                              onChange={updateElement}
-                              snapGuides={snapGuides}
-                              canvasW={canvasW}
-                              canvasH={canvasH}
-                              transformerAnchorSize={transformerAnchorSize}
-                              editing={!isExporting}
-	                              onInteractionChange={setObjectInteracting}
-                              pushHistory={pushHistory}
-                              registerSelectableNode={registerSelectableNode}
-                              onSnapChange={updateLiveGuides}
-                            />
-                          );
-                        }
-
-                        if (item.type === "sticker") {
-                          return (
-                            <StickerShape
-                              key={item.id}
-                              item={item}
-	                              isSelected={!isExporting && item.id === selectedId}
-	                              onSelect={() => {
-	                                setSelectedId(item.id);
-	                                setSelectedSlotId(null);
-	                              }}
-                              onChange={updateElement}
-                              snapGuides={snapGuides}
-                              canvasW={canvasW}
-                              canvasH={canvasH}
-                              transformerAnchorSize={transformerAnchorSize}
-                              editing={!isExporting}
-                              centeredScaling={modifiers.alt}
-	                              onInteractionChange={setObjectInteracting}
-                              pushHistory={pushHistory}
-                              registerSelectableNode={registerSelectableNode}
-                              onSnapChange={updateLiveGuides}
-                            />
-                          );
-                        }
-
-                        return null;
-                      })}
-
-                      {!isExporting &&
-                        Array.from({ length: slides - 1 }).map((_, i) => (
-                          <Line
-                            key={`slice-${i}`}
-                            points={[(i + 1) * singleW, 0, (i + 1) * singleW, canvasH]}
-                            stroke="#f8fafc"
-                            shadowColor="#172033"
-                            shadowBlur={2 / displayScale}
-                            dash={[7 / displayScale, 5 / displayScale]}
-                            strokeWidth={1.5 / displayScale}
-                            listening={false}
+                            pushHistory={pushHistory}
+                            registerSelectableNode={registerSelectableNode}
+                            onSnapChange={updateLiveGuides}
                           />
+                        );
+                      }
+
+                      const item = elements.find((candidate) => candidate.id === entry.id);
+                      if (!item || item.type === "frameRect") return null;
+
+                      if (item.type === "image") {
+                        return (
+                          <DraggableImage
+                            key={item.id}
+                            item={item}
+	                              isSelected={!isExporting && item.id === selectedId}
+	                              onSelect={() => {
+	                                setSelectedId(item.id);
+	                                setSelectedSlotId(null);
+	                              }}
+                            onChange={updateElement}
+                            snapGuides={snapGuides}
+                            canvasW={canvasW}
+                            canvasH={canvasH}
+                            transformerAnchorSize={transformerAnchorSize}
+                            editing={!isExporting}
+                            keepRatioOnTransform={modifiers.shift || isMobile}
+                            centeredScaling={modifiers.alt}
+	                              onInteractionChange={setObjectInteracting}
+                            pushHistory={pushHistory}
+                            registerSelectableNode={registerSelectableNode}
+                            onSnapChange={updateLiveGuides}
+                          />
+                        );
+                      }
+
+                      if (item.type === "text") {
+                        return (
+                          <DraggableText
+                            key={item.id}
+                            item={item}
+	                              isSelected={!isExporting && item.id === selectedId}
+	                              onSelect={() => {
+	                                setSelectedId(item.id);
+	                                setSelectedSlotId(null);
+	                              }}
+                            onChange={updateElement}
+                            snapGuides={snapGuides}
+                            canvasW={canvasW}
+                            canvasH={canvasH}
+                            transformerAnchorSize={transformerAnchorSize}
+                            editing={!isExporting}
+	                              onInteractionChange={setObjectInteracting}
+                            pushHistory={pushHistory}
+                            registerSelectableNode={registerSelectableNode}
+                            onSnapChange={updateLiveGuides}
+                          />
+                        );
+                      }
+
+                      if (item.type === "sticker") {
+                        return (
+                          <StickerShape
+                            key={item.id}
+                            item={item}
+	                              isSelected={!isExporting && item.id === selectedId}
+	                              onSelect={() => {
+	                                setSelectedId(item.id);
+	                                setSelectedSlotId(null);
+	                              }}
+                            onChange={updateElement}
+                            snapGuides={snapGuides}
+                            canvasW={canvasW}
+                            canvasH={canvasH}
+                            transformerAnchorSize={transformerAnchorSize}
+                            editing={!isExporting}
+                            centeredScaling={modifiers.alt}
+	                              onInteractionChange={setObjectInteracting}
+                            pushHistory={pushHistory}
+                            registerSelectableNode={registerSelectableNode}
+                            onSnapChange={updateLiveGuides}
+                          />
+                        );
+                      }
+
+                      return null;
+                    })}
+
+                    {!isExporting &&
+                      Array.from({ length: slides - 1 }).map((_, i) => (
+                        <Line
+                          key={`slice-${i}`}
+                          points={[(i + 1) * singleW, 0, (i + 1) * singleW, canvasH]}
+                          stroke="#f8fafc"
+                          shadowColor="#172033"
+                          shadowBlur={2 / displayScale}
+                          dash={[7 / displayScale, 5 / displayScale]}
+                          strokeWidth={1.5 / displayScale}
+                          listening={false}
+                        />
+                      ))}
+
+                    {!isExporting && showGuides && (
+                      <>
+                        {activeGuides.vertical.map((x, idx) => (
+                          <React.Fragment key={`gv-${idx}`}>
+                            <Line
+                              points={[x, 0, x, canvasH]}
+                              stroke={hexToRgba("#35f2a1", 0.22)}
+                              strokeWidth={isMobile ? 6 : 10}
+                            />
+                            <Line
+                              points={[x, 0, x, canvasH]}
+                              stroke={hexToRgba("#35f2a1", 0.98)}
+                              dash={[14, 8]}
+                              strokeWidth={isMobile ? 2 : 3}
+                            />
+                          </React.Fragment>
                         ))}
+                        {activeGuides.horizontal.map((y, idx) => (
+                          <React.Fragment key={`gh-${idx}`}>
+                            <Line
+                              points={[0, y, canvasW, y]}
+                              stroke={hexToRgba("#35f2a1", 0.22)}
+                              strokeWidth={isMobile ? 6 : 10}
+                            />
+                            <Line
+                              points={[0, y, canvasW, y]}
+                              stroke={hexToRgba("#35f2a1", 0.98)}
+                              dash={[14, 8]}
+                              strokeWidth={isMobile ? 2 : 3}
+                            />
+                          </React.Fragment>
+                        ))}
+                      </>
+                    )}
 
-                      {!isExporting && showGuides && (
-                        <>
-                          {activeGuides.vertical.map((x, idx) => (
-                            <React.Fragment key={`gv-${idx}`}>
-                              <Line
-                                points={[x, 0, x, canvasH]}
-                                stroke={hexToRgba("#35f2a1", 0.22)}
-                                strokeWidth={isMobile ? 6 : 10}
-                              />
-                              <Line
-                                points={[x, 0, x, canvasH]}
-                                stroke={hexToRgba("#35f2a1", 0.98)}
-                                dash={[14, 8]}
-                                strokeWidth={isMobile ? 2 : 3}
-                              />
-                            </React.Fragment>
-                          ))}
-                          {activeGuides.horizontal.map((y, idx) => (
-                            <React.Fragment key={`gh-${idx}`}>
-                              <Line
-                                points={[0, y, canvasW, y]}
-                                stroke={hexToRgba("#35f2a1", 0.22)}
-                                strokeWidth={isMobile ? 6 : 10}
-                              />
-                              <Line
-                                points={[0, y, canvasW, y]}
-                                stroke={hexToRgba("#35f2a1", 0.98)}
-                                dash={[14, 8]}
-                                strokeWidth={isMobile ? 2 : 3}
-                              />
-                            </React.Fragment>
-                          ))}
-                        </>
-                      )}
-
-                      <SelectionTransformer
-                        selectedNode={selectedNode}
-                        selectedType={selectedNodeType}
-                        editing={!isExporting}
-                        transformerAnchorSize={transformerAnchorSize}
-                        keepRatioOnTransform={modifiers.shift || isMobile}
-                        centeredScaling={modifiers.alt}
-                      />
-                    </Layer>
-                  </Stage>
-                </div>
+                    <SelectionTransformer
+                      selectedNode={selectedNode}
+                      selectedType={selectedNodeType}
+                      editing={!isExporting}
+                      transformerAnchorSize={transformerAnchorSize}
+                      keepRatioOnTransform={modifiers.shift || isMobile}
+                      centeredScaling={modifiers.alt}
+                    />
+                  </Layer>
+                </Stage>
               </div>
             </div>
           </div>
+            <div className="canvas-controls" onPointerDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
+              <div className="pill" role="group" aria-label="切換輪播頁">
+                <IconButton icon={ChevronLeft} label="上一張" size={16} disabled={visibleSlideIndex === 0} onClick={() => showSlides(visibleSlideIndex - 1)} />
+                <span className="pill__label" aria-live="polite">
+                  {canvasW * displayScale <= containerSize.w ? `共 ${slides} 張` : `${visibleSlideIndex + 1} / ${slides}`}
+                </span>
+                <IconButton icon={ChevronRight} label="下一張" size={16} disabled={visibleSlideIndex === slides - 1} onClick={() => showSlides(visibleSlideIndex + 1)} />
+                <span className="pill__divider" aria-hidden="true" />
+                <IconButton icon={RectangleVertical} label="只看這一張" size={16} onClick={() => showSlides(visibleSlideIndex)} />
+                <IconButton icon={GalleryHorizontal} label="看全部" size={16} onClick={() => showSlides(null)} />
+              </div>
+              {!isMobile && (
+                <div className="pill" role="group" aria-label="縮放">
+                  <IconButton icon={Minus} label="縮小畫面" size={16} onClick={zoomOut} />
+                  <button type="button" className="pill__label pill__label--button" title="符合畫面" onClick={fitToScreen}>
+                    {zoomPercent}%
+                  </button>
+                  <IconButton icon={Plus} label="放大畫面" size={16} onClick={zoomIn} />
+                </div>
+              )}
+            </div>
+          </div>
 
+          {isMobile && (
+            <MobileToolbar
+              tools={panelTabs}
+              activeTool={mobileDrawerOpen ? mobileTab : null}
+              onOpenTool={(key) => {
+                setMobileTab(key);
+                setMobileDrawerOpen(true);
+              }}
+              selectionLabel={selectionLabel}
+              isSlot={!!selectedSlot}
+              hasSlotPhoto={!!selectedSlot?.imageSrc}
+              actions={mobileSelectedActions}
+              onPickPhoto={openPhotoPicker}
+              onOpenEdit={() => {
+                setMobileTab("edit");
+                setMobileDrawerOpen(true);
+              }}
+              onClearSelection={clearSelection}
+            />
+          )}
+        </main>
 
-
-
-
-
-        </div>
         {!isMobile && (
-          <BottomAssetTray
-            images={images}
-            selectedSlot={selectedSlot}
-            onPickImage={addImageToCanvas}
-            persistent={false}
-          />
-        )}
-
-        {isMobile && (
-          <MobileBottomDock
-            images={images}
-            selectedSlot={selectedSlot}
-            onPickImage={addImageToCanvas}
-            activeTab={mobileTab}
-            onTabChange={(tab) => {
-              setMobileTab(tab);
-              if (tab === "edit" && (selectedItem || selectedSlot)) {
-                const target = selectedSlot || selectedItem;
-                showSlides(clamp(Math.floor((target.x + target.width / 2) / singleW), 0, slides - 1));
-              }
-              setMobileDrawerOpen(tab !== "edit" || !(selectedItem || selectedSlot));
-            }}
-            actions={mobileSelectedActions}
-            onOpenDetails={() => { setMobileTab("edit"); setMobileDrawerOpen(true); }}
-            zoomPercent={Math.round((userZoom || 1) * 100)}
-            hidden={mobileDrawerOpen}
-            selectionLabel={selectedSlot ? selectedSlot.label || "圖框" : selectedItem ? selectedItem.text || "圖片或元素" : null}
-            onClearSelection={clearSelection}
-          />
-        )}
-
-
-      </main>
-
-      {!isMobile && (
-        <aside className="sidebar right">
-          <DesktopInspectorPanel
+          <Inspector
             selectedItem={selectedItem}
             selectedSlot={selectedSlot}
+            selectionLabel={selectionLabel}
+            rotation={rotationDisplay}
+            actions={mobileSelectedActions}
             updateElement={updateElement}
             updateSlot={updateSlot}
-            setShowGuides={setShowGuides}
-            showGuides={showGuides}
-            onBringForward={selectedSlot ? bringForwardSlot : bringForward}
-            onSendBackward={selectedSlot ? sendBackwardSlot : sendBackward}
-            onDuplicate={duplicateSelected}
-            onRemove={removeSelected}
+            onPickPhoto={openPhotoPicker}
             onClearSelection={clearSelection}
-            selectedActions={mobileSelectedActions}
+            project={projectPanelProject}
+            setProject={setProjectPanelProject}
+            showGuides={showGuides}
+            onToggleGuides={() => setShowGuides((value) => !value)}
           />
-          <PreviewPanelUI {...previewPanelProps} />
-        </aside>
+        )}
+      </div>
+
+      {isMobile && (
+        <MobileSheet
+          open={mobileDrawerOpen}
+          title={mobileTab === "edit" && selectionLabel ? `調整${selectionLabel}` : sheetTitles[mobileTab]}
+          onClose={() => setMobileDrawerOpen(false)}
+          peek={mobileTab === "edit"}
+        >
+          {renderPanel(mobileTab)}
+        </MobileSheet>
       )}
 
-      {isMobile && <MobileDrawerUI {...mobileDrawerProps} />}
+      {!isMobile && (
+        <Dialog
+          open={exportDialogOpen}
+          title="輸出切圖"
+          subtitle={`${slides} 張 · 每張 ${exportW}×${exportH}`}
+          onClose={() => setExportDialogOpen(false)}
+          className="dialog--export"
+        >
+          <ExportPanel {...exportPanelProps} />
+        </Dialog>
+      )}
+
+      {exportError && (
+        <div className="toast" role="status" aria-live="polite">
+          {exportError}
+        </div>
+      )}
 
       {isMobile && saveFallback && (
-        <div className="mobile-save-sheet" role="dialog" aria-modal="true">
-          <div className="mobile-save-sheet__head">
+        <div className="save-sheet" role="dialog" aria-modal="true" aria-label="儲存圖片">
+          <header className="save-sheet__head">
             <div>
-              <strong>儲存圖片</strong>
-              <span>長按圖片，或開啟圖片後用系統分享儲存。</span>
+              <h2>儲存圖片</h2>
+              <p>長按圖片即可存到相簿。</p>
             </div>
-            <button
-              type="button"
-              className="ghost"
-              onClick={closeSaveFallback}
-            >
+            <button type="button" className="btn btn--small" onClick={closeSaveFallback}>
               關閉
             </button>
-          </div>
-
-          <div className="mobile-save-sheet__image">
+          </header>
+          <div className="save-sheet__image">
             <img src={saveFallback.src} alt="可儲存的切圖" />
           </div>
-
-          <div className="mobile-save-sheet__actions">
-            <a href={saveFallback.src} target="_blank" rel="noreferrer">
+          <div className="save-sheet__actions">
+            <a className="btn" href={saveFallback.src} target="_blank" rel="noreferrer">
               開啟圖片
             </a>
-            <button
-              type="button"
-              onClick={() => downloadBlob(saveFallback.blob, saveFallback.filename)}
-            >
+            <button type="button" className="btn btn--primary" onClick={() => downloadBlob(saveFallback.blob, saveFallback.filename)}>
               下載
             </button>
           </div>
@@ -2387,7 +2421,7 @@ export default function App() {
       )}
 
       <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onUploadFiles} />
-      <input ref={importRef} type="file" accept="application/json" hidden onChange={importProject} />
+      <input ref={importRef} type="file" accept="application/json,.json" hidden onChange={importProject} />
     </div>
   );
 }

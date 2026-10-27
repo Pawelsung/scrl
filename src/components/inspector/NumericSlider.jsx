@@ -1,4 +1,5 @@
 import React from "react";
+import { Minus, Plus } from "lucide-react";
 import { clamp } from "../../lib/editorUtils.js";
 
 export function NumericSlider({
@@ -16,19 +17,20 @@ export function NumericSlider({
   const clampValue = (next) => clamp(Number(next), Number(min), Number(max));
   const commit = (next) => onChange(clampValue(next));
   const nudge = (dir) => commit(numericValue + Number(step) * dir);
+  const progress = ((numericValue - min) / (max - min || 1)) * 100;
 
   return (
-    <label className="field field--slider">
-      <span className="field__label-row">
-        <span>{label}</span>
+    <div className="slider-field">
+      <div className="slider-field__head">
+        <span className="field__label">{label}</span>
         <output>
           {displayValue}
           {suffix}
         </output>
-      </span>
-      <div className="slider-stepper">
-        <button type="button" className="slider-stepper__button" onClick={() => nudge(-1)} aria-label={`${label} 減少`}>
-          -
+      </div>
+      <div className="slider-field__control">
+        <button type="button" onClick={() => nudge(-1)} aria-label={`${label}減少`}>
+          <Minus size={14} aria-hidden="true" />
         </button>
         <input
           type="range"
@@ -36,12 +38,14 @@ export function NumericSlider({
           max={max}
           step={step}
           value={numericValue}
+          aria-label={label}
+          style={{ "--progress": `${progress}%` }}
           onChange={(e) => commit(e.target.value)}
         />
-        <button type="button" className="slider-stepper__button" onClick={() => nudge(1)} aria-label={`${label} 增加`}>
-          +
+        <button type="button" onClick={() => nudge(1)} aria-label={`${label}增加`}>
+          <Plus size={14} aria-hidden="true" />
         </button>
       </div>
-    </label>
+    </div>
   );
 }
