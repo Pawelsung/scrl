@@ -63,6 +63,8 @@ function sanitizeImage(image) {
 function sanitizeElement(element, assetIds) {
   if (!isPlainObject(element) || !isSafeId(element.id) || !ELEMENT_TYPES.has(element.type)) return null;
   const clean = sanitizeValue(element);
+  // Missing coordinates would reach Konva as NaN.
+  if (typeof clean.x !== "number" || typeof clean.y !== "number") return null;
   if ("src" in clean && !isSafeImageSrc(clean.src)) delete clean.src;
   if (clean.sourceAssetId && !assetIds.has(clean.sourceAssetId)) delete clean.sourceAssetId;
   if (clean.type === "image" && !clean.src && !clean.sourceAssetId) return null;
